@@ -1,0 +1,104 @@
+---
+description: Architecture React Native CLI avec React Navigation
+globs:
+  - "src/**/*.ts"
+  - "src/**/*.tsx"
+  - "android/**"
+  - "ios/**"
+alwaysApply: false
+---
+
+# Architecture mobile
+
+Stack :
+
+```text
+React Native CLI
+React Navigation
+TanStack Query
+Zustand
+React Hook Form
+Zod
+Lucide React Native
+Lottie React Native
+```
+
+Interdit :
+
+```text
+Expo
+Expo Router
+```
+
+## Structure
+
+```text
+src/
+├── navigation/
+├── screens/
+├── features/
+├── components/
+│   ├── ui/
+│   ├── forms/
+│   ├── feedback/
+│   └── domain/
+├── services/
+├── hooks/
+├── stores/
+├── theme/
+├── schemas/
+├── types/
+└── utils/
+```
+
+## Navigation
+
+- React Navigation uniquement.
+- Typage complet des stacks.
+- Aucun nom de route en chaîne dispersée.
+- Centraliser les types de navigation.
+- Gérer le retour Android.
+- Utiliser les nested navigators avec modération.
+
+## État
+
+TanStack Query :
+
+- données serveur ;
+- cache ;
+- mutations.
+
+Zustand :
+
+- état UI global minimal ;
+- brouillon de transfert ;
+- préférences locales.
+
+Ne pas dupliquer les données serveur dans Zustand.
+
+## Sécurité locale
+
+- Keychain iOS ;
+- Keystore Android ;
+- aucun token en AsyncStorage ;
+- aucune donnée sensible dans les logs.
+
+## UX
+
+- safe areas ;
+- clavier ;
+- petit écran ;
+- hors ligne ;
+- loading ;
+- erreur ;
+- succès ;
+- accessibilité ;
+- zones tactiles ≥ 44 px.
+
+## Formulaires
+
+- React Hook Form ;
+- Zod ;
+- clavier adapté ;
+- focus sur erreur ;
+- format téléphone et montant.

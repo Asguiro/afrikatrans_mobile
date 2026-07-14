@@ -1,0 +1,81 @@
+---
+description: Conventions API REST AfrikaTrans
+globs:
+  - "src/**/*controller.ts"
+  - "src/**/*dto.ts"
+alwaysApply: false
+---
+
+# API
+
+Préfixe :
+
+```text
+/api/v1
+```
+
+## Réponse
+
+Succès :
+
+```json
+{
+  "data": {},
+  "meta": {},
+  "error": null
+}
+```
+
+Erreur :
+
+```json
+{
+  "data": null,
+  "error": {
+    "code": "QUOTE_EXPIRED",
+    "message": "Le devis a expiré",
+    "details": null
+  }
+}
+```
+
+## Règles
+
+- DTO obligatoire ;
+- validation ;
+- code métier stable ;
+- message utilisateur clair ;
+- statut HTTP correct ;
+- Swagger ;
+- pas de fuite technique.
+
+## Pagination
+
+Préférer cursor pagination :
+
+```text
+?limit=25&cursor=...
+```
+
+## Idempotence
+
+Obligatoire pour :
+
+- création de transaction ;
+- paiement ;
+- remboursement ;
+- actions financières.
+
+Header :
+
+```text
+Idempotency-Key
+```
+
+## Webhooks
+
+- signature ;
+- anti-rejeu ;
+- réponse rapide ;
+- persistance brute ;
+- traitement asynchrone.

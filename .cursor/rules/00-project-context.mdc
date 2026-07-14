@@ -1,0 +1,26 @@
+---
+description: Contexte global AfrikaTrans et règles communes
+alwaysApply: true
+---
+
+# Contexte projet
+
+AfrikaTrans est une plateforme de transfert d’argent interafricain.
+
+Dépôts séparés :
+
+- `afrikatrans-web`
+- `afrikatrans-admin`
+- `afrikatrans-mobile`
+- `afrikatrans-api`
+
+## Règles communes
+
+- TypeScript strict obligatoire.
+- Ne jamais utiliser `any`.
+- Ne jamais dupliquer une règle métier entre plusieurs couches.
+- Le backend est la source de vérité des montants, frais, taux, limites et statuts.
+- Tous les écrans doivent gérer loading, empty, error et success.
+- Toutes les actions sensibles doivent être traçables.
+- Réutiliser les composants et tokens existants.
+- Préférer une implémentation simple et maintenable à une abstraction prématurée.

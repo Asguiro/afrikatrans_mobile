@@ -1,0 +1,39 @@
+---
+description: Focus dépôt mobile + backend en préparation
+alwaysApply: true
+---
+
+# Workspace mobile AfrikaTrans
+
+Ce dépôt est **uniquement** l’app mobile React Native CLI (`afrikatrans_mobile`).
+
+## Périmètre de travail
+
+- Tout développement, refactor, feature, fix et test se fait dans le code mobile (ex. `App.tsx`, `src/`, `android/`, `ios/`, tests).
+- Les dossiers `docs/`, architecture web/admin/backend, design non mobile, Prisma, NestJS, etc. sont **lecture seule à titre d’information** : ne pas y implémenter, ne pas y générer du code application, ne pas les traiter comme code source actif.
+- Prioriser les docs utiles au mobile : vision produit, flux transfert, inventaire écrans mobile, design mobile, architecture mobile, conventions API (contrats clients).
+
+## Stack cible
+
+```text
+React Native CLI · React Navigation · TypeScript
+TanStack Query · Zustand · React Hook Form · Zod
+```
+
+Interdit : Expo, Expo Router.
+
+## Backend en développement
+
+Le backend NestJS n’est pas encore disponible. L’app doit **déjà fonctionner** tout en préparant son arrivée :
+
+- Couche `services` / client API avec contrats alignés sur `/api/v1` (formes `data` / `error`).
+- Mode mock / fixturés (quotes, auth, transactions, bénéficiaires) branchable sans changer les écrans.
+- TanStack Query pour données « serveur » ; Zustand seulement pour UI / brouillons / préférences locales.
+- Ne jamais inventer de règles métier définitives côté mobile pour montants, frais, taux, limites, statuts : les mocker de façon réaliste, puis basculer vers l’API réelle sans réécrire l’UI.
+- Aucun token sensible en AsyncStorage ; Keychain / Keystore prêts dès l’auth.
+
+## Comportement agent
+
+- Ne pas proposer d’implémenter web, admin ou API Nest dans ce dépôt.
+- Ne pas modifier les packs docs hors besoin explicite de l’utilisateur.
+- En cas de doute métier : s’appuyer sur les specs en lecture, pas sur une logique hardcodée figée dans l’UI.

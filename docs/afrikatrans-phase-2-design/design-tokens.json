@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json.schemastore.org/stylelintrc.json",
+  "name": "Afrika UI",
+  "version": "1.0.0",
+  "colors": {
+    "light": {
+      "brandPrimary": "#0A2E63",
+      "brandPrimaryHover": "#082650",
+      "brandPrimarySoft": "#EAF2FF",
+      "brandAccent": "#F5B700",
+      "brandAccentHover": "#DFA600",
+      "brandAccentSoft": "#FFF7D6",
+      "background": "#F6F8FC",
+      "surface": "#FFFFFF",
+      "surfaceRaised": "#FFFFFF",
+      "textPrimary": "#10213A",
+      "textSecondary": "#5C6B80",
+      "textMuted": "#8793A5",
+      "border": "#DCE3ED",
+      "divider": "#E9EDF3",
+      "success": "#168A4A",
+      "successSoft": "#E7F7EE",
+      "warning": "#B36B00",
+      "warningSoft": "#FFF3DF",
+      "error": "#C63C3C",
+      "errorSoft": "#FDECEC",
+      "info": "#1677B8",
+      "infoSoft": "#E9F5FC"
+    },
+    "dark": {
+      "brandPrimary": "#7FB3FF",
+      "brandPrimaryHover": "#9AC3FF",
+      "brandPrimarySoft": "#102745",
+      "brandAccent": "#FFC83D",
+      "brandAccentHover": "#FFD66B",
+      "brandAccentSoft": "#3A300F",
+      "background": "#0B1220",
+      "surface": "#111B2E",
+      "surfaceRaised": "#172338",
+      "textPrimary": "#F4F7FB",
+      "textSecondary": "#A8B4C5",
+      "textMuted": "#7E8B9E",
+      "border": "#2A3951",
+      "divider": "#233148",
+      "success": "#55D68A",
+      "successSoft": "#123524",
+      "warning": "#FFBC55",
+      "warningSoft": "#3A2A12",
+      "error": "#FF7D7D",
+      "errorSoft": "#3C1A1A",
+      "info": "#63B8EE",
+      "infoSoft": "#102E40"
+    }
+  },
+  "typography": {
+    "fontFamily": "Inter",
+    "fallback": [
+      "system-ui",
+      "sans-serif"
+    ],
+    "sizes": {
+      "caption": 12,
+      "bodySmall": 14,
+      "body": 16,
+      "bodyLarge": 18,
+      "h4": 20,
+      "h3": 24,
+      "h2": 30,
+      "h1": 36,
+      "display": 48
+    }
+  },
+  "spacing": [
+    4,
+    8,
+    12,
+    16,
+    20,
+    24,
+    32,
+    40,
+    48,
+    64,
+    80,
+    96
+  ],
+  "radius": {
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "full": 999
+  },
+  "controlHeights": {
+    "small": 36,
+    "medium": 44,
+    "large": 52
+  },
+  "breakpoints": {
+    "sm": 640,
+    "md": 768,
+    "lg": 1024,
+    "xl": 1280,
+    "2xl": 1536
+  }
+}

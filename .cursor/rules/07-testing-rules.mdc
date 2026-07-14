@@ -1,0 +1,94 @@
+---
+description: Règles de tests frontend, mobile et backend
+globs:
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "test/**/*.ts"
+alwaysApply: false
+---
+
+# Tests
+
+## Principes
+
+Tester le comportement, pas l’implémentation.
+
+Couverture prioritaire :
+
+- règles financières ;
+- authentification ;
+- transitions ;
+- idempotence ;
+- opérateurs ;
+- permissions ;
+- erreurs.
+
+## Backend
+
+Tests :
+
+- unitaires ;
+- intégration ;
+- e2e ;
+- contract tests.
+
+Cas obligatoires :
+
+```text
+devis expiré
+montant hors limite
+double création
+double confirmation
+webhook dupliqué
+paiement échoué
+payout échoué
+remboursement
+permission refusée
+```
+
+## Frontend
+
+Tester :
+
+- rendu ;
+- validation ;
+- erreur serveur ;
+- loading ;
+- empty ;
+- succès ;
+- accessibilité de base.
+
+## Mobile
+
+Tester :
+
+- navigation ;
+- formulaire ;
+- clavier ;
+- offline ;
+- mutation ;
+- retour Android ;
+- reprise de brouillon.
+
+## Mocks
+
+- ne pas mocker toute la couche métier ;
+- préférer adapters ;
+- fixtures réalistes ;
+- pas de données incohérentes.
+
+## Nommage
+
+```ts
+describe('TransactionService')
+it('rejects an expired quote')
+```
+
+## CI
+
+Aucune fusion si :
+
+- tests rouges ;
+- types rouges ;
+- lint rouge.

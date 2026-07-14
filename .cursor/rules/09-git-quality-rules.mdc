@@ -1,0 +1,48 @@
+---
+description: Qualité, conventions et maintenance
+alwaysApply: true
+---
+
+# Qualité
+
+## TypeScript
+
+Interdit :
+
+```text
+any
+as any
+@ts-ignore
+```
+
+## Code
+
+- fonctions courtes ;
+- noms explicites ;
+- pas de duplication ;
+- pas de commentaire inutile ;
+- documenter la décision, pas la syntaxe.
+
+## Dépendances
+
+Avant d’ajouter une dépendance :
+
+1. vérifier si le besoin existe déjà ;
+2. vérifier maintenance ;
+3. vérifier taille ;
+4. vérifier sécurité ;
+5. justifier.
+
+## Git
+
+Conventional commits.
+
+## Documentation
+
+Mettre à jour :
+
+- README ;
+- variables d’environnement ;
+- API ;
+- migrations ;
+- décisions d’architecture.

@@ -17,6 +17,9 @@ end
 target 'afrikatrans_mobile' do
   config = use_native_modules!
 
+  # Local Lottie (run scripts/ensure-lottie-ios.sh if missing). Avoids CDN flakes.
+  pod 'lottie-ios', :path => '../vendor/lottie-ios'
+
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.

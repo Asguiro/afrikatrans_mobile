@@ -1,0 +1,87 @@
+---
+description: Règles Prisma et PostgreSQL
+globs:
+  - "prisma/**/*.prisma"
+  - "src/**/*.repository.ts"
+  - "src/**/repositories/**/*.ts"
+alwaysApply: false
+---
+
+# Prisma
+
+## Montants
+
+Interdit :
+
+```prisma
+Float
+```
+
+Utiliser :
+
+```prisma
+Decimal @db.Decimal(20, 2)
+```
+
+ou précision adaptée.
+
+## Identifiants
+
+```prisma
+id String @id @default(cuid())
+```
+
+Ajouter une référence métier unique aux transactions.
+
+## Dates
+
+```prisma
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+```
+
+## Suppression
+
+Pas de suppression physique pour :
+
+- transactions ;
+- paiements ;
+- audits ;
+- statuts ;
+- KYC ;
+- remboursements.
+
+Utiliser `deletedAt` pour les entités supprimables.
+
+## Index
+
+Créer des index pour :
+
+- foreign keys ;
+- statuts ;
+- dates ;
+- recherches ;
+- références ;
+- providerReference.
+
+## Requêtes
+
+- `select` explicite ;
+- pagination ;
+- pas de `findMany()` sans limite ;
+- éviter N+1 ;
+- transactions Prisma pour opérations atomiques.
+
+## Migrations
+
+- migrations versionnées ;
+- revue obligatoire ;
+- test staging ;
+- backup ;
+- pas de `db push` en production.
+
+## Seed
+
+- idempotent ;
+- sans secrets ;
+- données référentielles séparées des données de démonstration.

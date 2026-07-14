@@ -1,0 +1,92 @@
+---
+description: Architecture NestJS modulaire AfrikaTrans
+globs:
+  - "src/**/*.ts"
+  - "prisma/**/*.prisma"
+alwaysApply: false
+---
+
+# Architecture backend NestJS
+
+## Structure
+
+```text
+src/
+├── common/
+├── config/
+├── database/
+├── infrastructure/
+└── modules/
+```
+
+Chaque domaine possède son module.
+
+## Contrôleurs
+
+Un contrôleur :
+
+- reçoit ;
+- valide ;
+- appelle un service ;
+- sérialise ;
+- répond.
+
+Interdit :
+
+- logique métier ;
+- accès Prisma direct ;
+- appels opérateur directs.
+
+## Services
+
+Un service :
+
+- applique les règles ;
+- orchestre ;
+- persiste via repository ;
+- publie des événements.
+
+## Repositories
+
+- accès aux données ;
+- requêtes encapsulées ;
+- `select` explicites ;
+- pagination ;
+- transactions Prisma si nécessaire.
+
+## DTO
+
+- validation obligatoire ;
+- messages explicites ;
+- aucun DTO non typé ;
+- séparer entrée et sortie.
+
+## Erreurs
+
+Utiliser des erreurs métier codifiées.
+
+Exemple :
+
+```ts
+throw new BusinessException(
+  'QUOTE_EXPIRED',
+  'Le devis a expiré',
+);
+```
+
+## Événements
+
+Publier des événements métier :
+
+```text
+transaction.created
+payment.confirmed
+payout.completed
+refund.completed
+```
+
+## Infrastructure
+
+Les fournisseurs externes sont derrière des interfaces.
+
+Ne jamais importer directement un SDK opérateur dans le domaine transaction.

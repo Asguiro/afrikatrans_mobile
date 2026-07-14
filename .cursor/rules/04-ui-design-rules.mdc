@@ -1,0 +1,99 @@
+---
+description: Règles UI, design system, responsive et dark mode
+globs:
+  - "**/*.tsx"
+  - "**/*.css"
+  - "**/*.scss"
+alwaysApply: false
+---
+
+# Règles UI
+
+Direction :
+
+> Fintech panafricaine premium, simple, rassurante et moderne.
+
+## Couleurs
+
+Utiliser uniquement les tokens du design system.
+
+Interdit :
+
+- hexadécimaux dans les pages ;
+- couleur utilisée sans signification ;
+- texte jaune sur fond blanc ;
+- statuts uniquement par couleur.
+
+## Hiérarchie
+
+- une action primaire par zone ;
+- titre clair ;
+- sous-texte utile ;
+- espace généreux ;
+- pas de carte autour de tout.
+
+## Composants
+
+Toujours vérifier si un composant existe avant d’en créer un.
+
+Variantes :
+
+```text
+primary
+secondary
+outline
+ghost
+danger
+```
+
+Ne pas créer `BlueButton`, `YellowCard`, etc.
+
+## Formulaires
+
+Toujours afficher :
+
+- label ;
+- champ ;
+- aide si utile ;
+- erreur ;
+- état disabled ;
+- état loading.
+
+Ne jamais utiliser le placeholder comme seul label.
+
+## Données financières
+
+Toujours afficher :
+
+- montant ;
+- devise ;
+- frais ;
+- taux si applicable ;
+- total ;
+- montant reçu.
+
+## Responsive
+
+- mobile-first ;
+- pas de largeur fixe inutile ;
+- tableaux convertis en cartes sur mobile ;
+- CTA accessible ;
+- contenu non tronqué.
+
+## Dark mode
+
+- utiliser les tokens ;
+- vérifier chaque composant ;
+- ne pas inverser les couleurs automatiquement ;
+- tester les logos ;
+- tester les graphiques ;
+- tester Lottie.
+
+## Accessibilité
+
+- contraste AA ;
+- focus visible ;
+- navigation clavier ;
+- labels accessibles ;
+- zones tactiles 44 px minimum ;
+- erreurs non basées uniquement sur la couleur.

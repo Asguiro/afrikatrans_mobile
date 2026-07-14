@@ -1,0 +1,104 @@
+---
+description: Architecture React Router v7 SSR pour le site et l'administration
+globs:
+  - "app/**/*.ts"
+  - "app/**/*.tsx"
+  - "src/**/*.ts"
+  - "src/**/*.tsx"
+alwaysApply: false
+---
+
+# Architecture frontend
+
+Stack :
+
+```text
+React Router v7 SSR
+TypeScript
+Tailwind
+DaisyUI
+TanStack Query
+TanStack Table
+Zod
+Lucide React
+Lottie
+```
+
+## Structure
+
+```text
+app/
+├── components/
+│   ├── ui/
+│   ├── forms/
+│   ├── feedback/
+│   ├── data-display/
+│   └── domain/
+├── features/
+├── routes/
+├── server/
+│   ├── actions/
+│   ├── loaders/
+│   └── services/
+├── lib/
+├── hooks/
+├── schemas/
+├── types/
+└── styles/
+```
+
+## SSR
+
+- Les données initiales sont chargées par loader côté serveur.
+- Les mutations utilisent actions ou endpoints dédiés.
+- Les secrets ne doivent jamais entrer dans le bundle client.
+- Ne jamais appeler directement une API sensible depuis un composant.
+- Séparer données publiques et données authentifiées.
+
+## Routes
+
+Une route doit rester légère.
+
+Elle orchestre :
+
+- loader ;
+- action ;
+- composant de page ;
+- error boundary.
+
+La logique métier reste dans `features` ou `server/services`.
+
+## TanStack Query
+
+Utiliser pour :
+
+- cache client ;
+- revalidation ;
+- mutations ;
+- invalidation ;
+- données interactives après hydratation.
+
+Ne pas remplacer les loaders SSR sans raison.
+
+## Composants
+
+- composants génériques dans `components/ui`;
+- composants métier dans `features/<feature>/components`;
+- pas de composant géant ;
+- props typées ;
+- logique métier hors JSX.
+
+## Formulaires
+
+- schéma Zod partagé ;
+- validation client et serveur ;
+- erreurs de champ explicites ;
+- conserver les valeurs après erreur serveur.
+
+## Performance
+
+- lazy loading ;
+- code splitting ;
+- images optimisées ;
+- Lottie à la demande ;
+- éviter les rerenders inutiles.

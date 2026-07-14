@@ -1,0 +1,76 @@
+---
+description: Règles de sécurité applicables à tous les dépôts
+alwaysApply: true
+---
+
+# Sécurité
+
+## Secrets
+
+Interdit :
+
+- secret dans le code ;
+- secret dans Git ;
+- token dans les logs ;
+- clé opérateur dans le frontend.
+
+Utiliser variables d’environnement et secret manager.
+
+## Authentification
+
+- access token court ;
+- refresh token rotatif ;
+- refresh token hashé ;
+- révocation de session ;
+- OTP expirant ;
+- PIN hashé ;
+- MFA obligatoire pour admin.
+
+## Données sensibles
+
+Ne jamais logger :
+
+- mot de passe ;
+- PIN ;
+- OTP ;
+- token ;
+- document KYC ;
+- données personnelles complètes.
+
+## API
+
+- validation ;
+- rate limit ;
+- CORS strict ;
+- Helmet ;
+- permissions ;
+- audit ;
+- anti-bruteforce ;
+- taille de body limitée.
+
+## Mobile
+
+- Keychain ;
+- Keystore ;
+- biométrie locale uniquement ;
+- pas de token en stockage non sécurisé.
+
+## Transactions
+
+- idempotence ;
+- machine à états ;
+- verrous ;
+- retries sûrs ;
+- audit ;
+- callbacks signés ;
+- anti-rejeu.
+
+## Admin
+
+Actions critiques :
+
+- confirmation ;
+- motif ;
+- permission ;
+- audit ;
+- MFA ou double validation selon risque.

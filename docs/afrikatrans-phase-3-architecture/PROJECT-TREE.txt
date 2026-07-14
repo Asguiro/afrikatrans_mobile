@@ -1,0 +1,40 @@
+afrikatrans-api/
+├── prisma/
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed.ts
+├── src/
+│   ├── app.module.ts
+│   ├── main.ts
+│   ├── common/
+│   ├── config/
+│   ├── database/
+│   ├── infrastructure/
+│   └── modules/
+│       ├── auth/
+│       ├── users/
+│       ├── beneficiaries/
+│       ├── countries/
+│       ├── currencies/
+│       ├── operators/
+│       ├── corridors/
+│       ├── pricing/
+│       ├── quotes/
+│       ├── transactions/
+│       ├── payments/
+│       ├── payouts/
+│       ├── refunds/
+│       ├── kyc/
+│       ├── compliance/
+│       ├── notifications/
+│       ├── audit/
+│       ├── support/
+│       ├── reports/
+│       ├── reconciliation/
+│       └── admin/
+├── test/
+├── docker-compose.yml
+├── Dockerfile
+├── .env.example
+├── package.json
+└── README.md
