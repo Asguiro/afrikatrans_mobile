@@ -26,7 +26,7 @@ export function WelcomeScreen({navigation}: Props) {
             paddingHorizontal: theme.spacing['2xl'],
           },
         ]}>
-        <BrandLogo variant="icon" size={88} showTagline />
+        <BrandLogo variant="icon" size={96} plate="plain" showTagline />
         <View style={styles.hero}>
           <LottieHero name="networkOrbit" size={200} />
         </View>
@@ -36,6 +36,7 @@ export function WelcomeScreen({navigation}: Props) {
             color: theme.colors.textPrimary,
             fontSize: theme.typography.h2,
             fontWeight: '800',
+            letterSpacing: -0.4,
             marginBottom: theme.spacing.sm,
           }}>
           Bienvenue
@@ -45,21 +46,13 @@ export function WelcomeScreen({navigation}: Props) {
             color: theme.colors.textSecondary,
             fontSize: theme.typography.body,
             lineHeight: 22,
-            marginBottom: theme.spacing.lg,
+            marginBottom: theme.spacing['2xl'],
           }}>
           Transferts Mobile Money panafricains, simples et sécurisés.
         </Text>
-        <Text
-          style={{
-            color: theme.colors.textMuted,
-            marginBottom: theme.spacing['2xl'],
-            fontSize: theme.typography.caption,
-          }}>
-          Mode démo : mot de passe Demo1234! · OTP 123456 · PIN 1234
-        </Text>
         <Button
           label="Créer un compte"
-          onPress={() => navigation.navigate('SelectCountry')}
+          onPress={() => navigation.navigate('Register')}
         />
         <Button
           label="Se connecter"

@@ -2,11 +2,10 @@ import type {NavigatorScreenParams} from '@react-navigation/native';
 
 export type AuthStackParamList = {
   Welcome: undefined;
-  SelectCountry: undefined;
-  Register: {countryCode: string};
+  Register: undefined;
   VerifyOtp: {phone: string};
-  CreatePin: undefined;
-  ConfirmPin: {pin: string};
+  CreatePin: {phone: string};
+  ConfirmPin: {pin: string; phone: string};
   Login: undefined;
   ForgotPassword: undefined;
   SessionExpired: undefined;

@@ -18,12 +18,14 @@ type Props = {
   size?: number;
   showTagline?: boolean;
   style?: StyleProp<ImageStyle>;
-  /** Conteneur (défaut: badge). `plain` si le parent fournit déjà le fond. */
+  /**
+   * `plain` = logo transparent sur le fond parent (défaut).
+   * `badge` = pastille surface pour contextes denses (listes, cards).
+   */
   plate?: 'badge' | 'plain';
   plateStyle?: StyleProp<ViewStyle>;
 };
 
-/** Tailles par défaut selon le contexte d’affichage. */
 const VARIANT_SCALE: Record<Variant, number> = {
   icon: 1,
   horizontal: 1.35,
@@ -31,18 +33,15 @@ const VARIANT_SCALE: Record<Variant, number> = {
 };
 
 /**
- * Les assets `logo_*.png` sont RGB sans alpha, fond blanc opaque.
- * On les pose donc sur un badge blanc arrondi pour éviter le carré
- * cru sur fond sombre / photographique.
+ * Marque AfrikaTrans — utilise `logo_light` / `logo_dark` selon le thème.
+ * Ne jamais utiliser `app-icon.png` dans l’UI.
  */
-const LOGO_PLATE_COLOR = '#FFFFFF';
-
 export function BrandLogo({
   variant = 'icon',
   size = 72,
   showTagline = false,
   style,
-  plate = 'badge',
+  plate = 'plain',
   plateStyle,
 }: Props) {
   const theme = useTheme();
@@ -65,10 +64,10 @@ export function BrandLogo({
           style={[
             styles.plate,
             {
-              width: side,
-              height: side,
+              width: side + 12,
+              height: side + 12,
               borderRadius: radius,
-              backgroundColor: LOGO_PLATE_COLOR,
+              backgroundColor: theme.colors.surface,
               borderColor: theme.colors.border,
             },
             plateStyle,

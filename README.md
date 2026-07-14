@@ -40,9 +40,11 @@ Le backend n’est pas encore branché en prod : l’app tourne déjà en **mode
 
 ### Logos marque
 
-| Light | Dark | Horizontal | Icône |
-| :---: | :---: | :---: | :---: |
-| <img src="src/assets/logos/logo_light.png" width="96" alt="Logo light" /> | <img src="src/assets/logos/logo_dark.png" width="96" alt="Logo dark" /> | <img src="src/assets/logos/logo-horizontal.png" width="160" alt="Logo horizontal" /> | <img src="src/assets/logos/app-icon.png" width="96" alt="App icon" /> |
+| Light | Dark |
+| :---: | :---: |
+| <img src="src/assets/logos/logo_light.png" width="96" alt="Logo light" /> | <img src="src/assets/logos/logo_dark.png" width="96" alt="Logo dark" /> |
+
+Marque UI exclusivement via `BrandLogo` (`logo_light` / `logo_dark`). Ne pas utiliser `app-icon.png` dans l’app.
 
 ### Opérateurs
 
@@ -127,6 +129,30 @@ npm run ios
 npm run android
 ```
 
+### Android — APK / AAB release (production)
+
+Prérequis locaux (jamais committer) :
+
+1. Keystore : `android/app/afrikatrans-upload.keystore`
+2. Credentials : `android/keystore.properties` (modèle : `android/keystore.properties.example`)
+
+```bash
+# APK installable (sideload / stores hors Play)
+npm run android:release
+
+# AAB pour Google Play
+npm run android:bundle
+```
+
+Sorties :
+
+| Artefact | Chemin |
+| --- | --- |
+| APK release | `android/app/build/outputs/apk/release/AfrikaTrans-<version>-release.apk` |
+| AAB release | `android/app/build/outputs/bundle/release/app-release.aab` |
+
+Signature alignée sur la [doc React Native — Signed APK](https://reactnative.dev/docs/signed-apk-android). Conservez le keystore et les mots de passe hors Git (backup chiffré recommandé).
+
 ### Metro
 
 ```bash
@@ -200,7 +226,9 @@ Les montants, frais, taux, limites et statuts viennent du **backend** (ou mocks 
 | --- | --- |
 | `npm start` | Metro |
 | `npm run ios` | Build + run iOS |
-| `npm run android` | Build + run Android |
+| `npm run android` | Build + run Android (debug) |
+| `npm run android:release` | APK release signé |
+| `npm run android:bundle` | AAB release (Play Store) |
 | `npm run ios:pods` | CocoaPods (+ lottie-ios local si besoin) |
 | `npm test` | Jest |
 | `npm run lint` | ESLint |

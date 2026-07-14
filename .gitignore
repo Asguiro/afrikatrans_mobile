@@ -40,6 +40,10 @@ local.properties
 !debug.keystore
 .kotlin/
 
+# Android release signing (local only)
+android/keystore.properties
+.secrets/
+
 # node.js
 #
 node_modules/

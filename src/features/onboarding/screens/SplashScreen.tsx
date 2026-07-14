@@ -12,7 +12,7 @@ import {BrandLogo} from '../../../components/brand/BrandLogo';
 
 /**
  * Splash de bootstrap : visible tant que `hydrate()` n’a pas terminé.
- * La navigation conditionnelle dans RootNavigator prend le relais ensuite.
+ * Logo = `logo_light` / `logo_dark` via BrandLogo (jamais app-icon).
  */
 export function SplashScreen() {
   const theme = useTheme();
@@ -31,20 +31,20 @@ export function SplashScreen() {
           styles.overlay,
           {
             backgroundColor: theme.isDark
-              ? 'rgba(11, 18, 32, 0.35)'
-              : 'rgba(255, 255, 255, 0.2)',
+              ? 'rgba(11, 18, 32, 0.45)'
+              : 'rgba(10, 46, 99, 0.18)',
           },
         ]}
       />
       <View style={styles.content}>
-        <BrandLogo variant="wordmark" size={120} showTagline />
+        <BrandLogo variant="wordmark" size={128} plate="plain" />
         <Text
           style={[
             styles.tagline,
             {
-              color: theme.isDark
-                ? theme.colors.brandAccent
-                : theme.colors.brandPrimary,
+            color: theme.isDark
+              ? theme.colors.brandAccent
+              : theme.colors.brandPrimary,
             },
           ]}>
           Transferts d'argent en Afrique,{'\n'}simplement et en toute sécurité

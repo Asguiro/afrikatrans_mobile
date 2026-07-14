@@ -52,7 +52,7 @@ export function HomeScreen({navigation}: Props) {
             Bonjour{user?.firstName ? `, ${user.firstName}` : ''}
           </Text>
         </View>
-        <BrandLogo variant="icon" size={44} />
+        <BrandLogo variant="icon" size={44} plate="plain" />
       </View>
 
       <View

@@ -109,7 +109,7 @@ export function AppLockScreen() {
               },
             ]}>
             <View style={styles.brand}>
-              <BrandLogo variant="icon" size={56} />
+              <BrandLogo variant="icon" size={56} plate="plain" />
             </View>
 
             <View

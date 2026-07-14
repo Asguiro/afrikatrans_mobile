@@ -2,7 +2,6 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {AuthStackParamList} from './types';
 import {WelcomeScreen} from '../features/auth/screens/WelcomeScreen';
-import {SelectCountryScreen} from '../features/auth/screens/SelectCountryScreen';
 import {RegisterScreen} from '../features/auth/screens/RegisterScreen';
 import {VerifyOtpScreen} from '../features/auth/screens/VerifyOtpScreen';
 import {CreatePinScreen} from '../features/auth/screens/CreatePinScreen';
@@ -31,19 +30,14 @@ export function AuthNavigator() {
         options={{headerShown: false}}
       />
       <Stack.Screen
-        name="SelectCountry"
-        component={SelectCountryScreen}
-        options={{title: 'Pays'}}
-      />
-      <Stack.Screen
         name="Register"
         component={RegisterScreen}
-        options={{title: 'Inscription'}}
+        options={{title: 'Créer un compte'}}
       />
       <Stack.Screen
         name="VerifyOtp"
         component={VerifyOtpScreen}
-        options={{title: 'OTP'}}
+        options={{title: 'Vérification'}}
       />
       <Stack.Screen
         name="CreatePin"
@@ -53,7 +47,7 @@ export function AuthNavigator() {
       <Stack.Screen
         name="ConfirmPin"
         component={ConfirmPinScreen}
-        options={{title: 'Confirmer PIN'}}
+        options={{title: 'Confirmation'}}
       />
       <Stack.Screen
         name="Login"

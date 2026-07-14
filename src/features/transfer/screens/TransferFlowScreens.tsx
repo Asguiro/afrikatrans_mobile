@@ -34,7 +34,7 @@ import {
   OperatorBrandGrid,
   OperatorLogoMark,
 } from '../components/OperatorBrandGrid';
-import {PhoneCountryField} from '../components/PhoneCountryField';
+import {PhoneCountryField} from '../../../components/ui/PhoneCountryField';
 import {QuoteSummaryCard} from '../components/QuoteSummaryCard';
 import {PhysicalReceipt} from '../components/PhysicalReceipt';
 import {
@@ -47,6 +47,7 @@ import {
   resolveOperator,
   resolveSourceOperator,
 } from '../utils/transferMath';
+import {composePhone, stripDialCode} from '../../../utils/phone';
 
 type OperatorProps = NativeStackScreenProps<
   TransferStackParamList,
@@ -65,15 +66,6 @@ type ProcessingProps = NativeStackScreenProps<
 >;
 type SuccessProps = NativeStackScreenProps<TransferStackParamList, 'Success'>;
 type ReceiptProps = NativeStackScreenProps<TransferStackParamList, 'Receipt'>;
-
-function stripDialCode(phone: string, dialCode: string): string {
-  const digits = phone.replace(/\D/g, '');
-  const dialDigits = dialCode.replace(/\D/g, '');
-  if (digits.startsWith(dialDigits)) {
-    return digits.slice(dialDigits.length);
-  }
-  return digits;
-}
 
 export function SelectOperatorScreen({navigation}: OperatorProps) {
   const theme = useTheme();
@@ -210,8 +202,8 @@ export function TransferPhonesScreen({navigation}: PhonesProps) {
         destinationCountryCode: destCountry,
         sourceOperatorId: sourceOp.id,
         destinationOperatorId: destOp.id,
-        sourceAccountPhone: `${sourceDial}${sourceNumber}`,
-        destinationPhone: `${destDial}${destNumber}`,
+        sourceAccountPhone: composePhone(sourceDial, sourceNumber),
+        destinationPhone: composePhone(destDial, destNumber),
         destinationFirstName: firstName.trim() || 'Destinataire',
         destinationLastName: lastName.trim() || destNumber.slice(-4),
       });

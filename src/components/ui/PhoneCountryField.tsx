@@ -5,15 +5,16 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import type {TextInputProps} from 'react-native';
-import type {Country} from '../../../types/api';
-import {useTheme} from '../../../theme/ThemeProvider';
-import {COUNTRY_FLAGS} from '../constants/operatorBrands';
+import type {Country} from '../../types/api';
+import {useTheme} from '../../theme/ThemeProvider';
+import {COUNTRY_FLAGS} from '../../features/transfer/constants/operatorBrands';
 
 type Props = {
   label: string;
@@ -23,6 +24,7 @@ type Props = {
   onCountryChange: (code: string) => void;
   onNumberChange: (digits: string) => void;
   hint?: string;
+  error?: string;
   returnKeyType?: TextInputProps['returnKeyType'];
   submitBehavior?: TextInputProps['submitBehavior'];
   onSubmitEditing?: TextInputProps['onSubmitEditing'];
@@ -39,6 +41,7 @@ export const PhoneCountryField = forwardRef<TextInput, Props>(
       onCountryChange,
       onNumberChange,
       hint,
+      error,
       returnKeyType,
       submitBehavior,
       onSubmitEditing,
@@ -74,7 +77,7 @@ export const PhoneCountryField = forwardRef<TextInput, Props>(
             styles.row,
             {
               backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
+              borderColor: error ? theme.colors.error : theme.colors.border,
               borderRadius: theme.radius.md,
               minHeight: theme.controlHeights.large,
             },
@@ -121,7 +124,16 @@ export const PhoneCountryField = forwardRef<TextInput, Props>(
             }}
           />
         </View>
-        {hint ? (
+        {error ? (
+          <Text
+            style={{
+              color: theme.colors.error,
+              fontSize: theme.typography.caption,
+              marginTop: 6,
+            }}>
+            {error}
+          </Text>
+        ) : hint ? (
           <Text
             style={{
               color: theme.colors.textMuted,
@@ -185,6 +197,12 @@ export const PhoneCountryField = forwardRef<TextInput, Props>(
                 },
               ]}
               onPress={e => e.stopPropagation()}>
+              <View
+                style={[
+                  styles.handle,
+                  {backgroundColor: theme.colors.border},
+                ]}
+              />
               <Text
                 style={{
                   color: theme.colors.textPrimary,
@@ -194,42 +212,47 @@ export const PhoneCountryField = forwardRef<TextInput, Props>(
                 }}>
                 Choisir le pays
               </Text>
-              {countries.map(c => (
-                <Pressable
-                  key={c.code}
-                  accessibilityRole="button"
-                  onPress={() => {
-                    onCountryChange(c.code);
-                    setPickerOpen(false);
-                  }}
-                  style={{
-                    paddingVertical: theme.spacing.md,
-                    borderBottomWidth: StyleSheet.hairlineWidth,
-                    borderBottomColor: theme.colors.divider,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 12,
-                  }}>
-                  <Text style={styles.flag}>
-                    {COUNTRY_FLAGS[c.code] ?? '🌍'}
-                  </Text>
-                  <View style={{flex: 1}}>
-                    <Text
-                      style={{
-                        color: theme.colors.textPrimary,
-                        fontWeight: '600',
-                      }}>
-                      {c.name}
+              <ScrollView
+                style={styles.sheetScroll}
+                keyboardShouldPersistTaps="handled">
+                {countries.map(c => (
+                  <Pressable
+                    key={c.code}
+                    accessibilityRole="button"
+                    onPress={() => {
+                      onCountryChange(c.code);
+                      setPickerOpen(false);
+                    }}
+                    style={{
+                      paddingVertical: theme.spacing.md,
+                      borderBottomWidth: StyleSheet.hairlineWidth,
+                      borderBottomColor: theme.colors.divider,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 12,
+                      minHeight: 52,
+                    }}>
+                    <Text style={styles.flag}>
+                      {COUNTRY_FLAGS[c.code] ?? '🌍'}
                     </Text>
-                    <Text style={{color: theme.colors.textSecondary}}>
-                      {c.dialCode} · {c.currency}
-                    </Text>
-                  </View>
-                  {c.code === countryCode ? (
-                    <Text style={{color: theme.colors.brandPrimary}}>✓</Text>
-                  ) : null}
-                </Pressable>
-              ))}
+                    <View style={{flex: 1}}>
+                      <Text
+                        style={{
+                          color: theme.colors.textPrimary,
+                          fontWeight: '600',
+                        }}>
+                        {c.name}
+                      </Text>
+                      <Text style={{color: theme.colors.textSecondary}}>
+                        {c.dialCode} · {c.currency}
+                      </Text>
+                    </View>
+                    {c.code === countryCode ? (
+                      <Text style={{color: theme.colors.brandPrimary}}>✓</Text>
+                    ) : null}
+                  </Pressable>
+                ))}
+              </ScrollView>
             </Pressable>
           </Pressable>
         </Modal>
@@ -264,6 +287,16 @@ const styles = StyleSheet.create({
     padding: 24,
     paddingBottom: 40,
     maxHeight: '70%',
+  },
+  sheetScroll: {
+    maxHeight: 360,
+  },
+  handle: {
+    alignSelf: 'center',
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 16,
   },
   accessory: {
     borderTopWidth: StyleSheet.hairlineWidth,

@@ -1,5 +1,25 @@
 import {z} from 'zod';
 
+export const registerIdentitySchema = z.object({
+  firstName: z.string().min(2, 'Prénom requis'),
+  lastName: z.string().min(2, 'Nom requis'),
+});
+
+export const registerPhoneSchema = z.object({
+  countryCode: z.string().min(2, 'Pays requis'),
+  nationalNumber: z.string().min(8, 'Numéro invalide'),
+});
+
+export const registerPasswordSchema = z
+  .object({
+    password: z.string().min(6, 'Au moins 6 caractères'),
+    confirmPassword: z.string().min(6, 'Confirmez le mot de passe'),
+  })
+  .refine(data => data.password === data.confirmPassword, {
+    message: 'Les mots de passe ne correspondent pas',
+    path: ['confirmPassword'],
+  });
+
 export const registerSchema = z.object({
   countryCode: z.string().min(2),
   phone: z.string().min(8, 'Numéro invalide'),
@@ -9,7 +29,8 @@ export const registerSchema = z.object({
 });
 
 export const loginSchema = z.object({
-  phone: z.string().min(8, 'Numéro invalide'),
+  countryCode: z.string().min(2, 'Pays requis'),
+  nationalNumber: z.string().min(8, 'Numéro invalide'),
   password: z.string().min(6, 'Mot de passe requis'),
 });
 

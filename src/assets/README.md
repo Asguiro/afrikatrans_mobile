@@ -7,14 +7,11 @@ Catalogue central : [`index.ts`](./index.ts). **Toujours** importer depuis ce mo
 <p>
   <img src="logos/logo_light.png" alt="Logo light" width="88" />
   <img src="logos/logo_dark.png" alt="Logo dark" width="88" />
-  <img src="logos/logo-horizontal.png" alt="Logo horizontal" width="140" />
-  <img src="logos/app-icon.png" alt="App icon" width="88" />
 </p>
 
 <p>
   <img src="splash/splash-light.png" alt="Splash light" width="120" />
   <img src="splash/splash-dark.png" alt="Splash dark" width="120" />
-  <img src="auth/login-preview.png" alt="Login" width="120" />
 </p>
 
 <p>
@@ -32,10 +29,8 @@ Catalogue central : [`index.ts`](./index.ts). **Toujours** importer depuis ce mo
 ```text
 assets/
 ├── logos/
-│   ├── logo_light.png
-│   ├── logo_dark.png
-│   ├── logo-horizontal.png
-│   ├── app-icon.png
+│   ├── logo_light.png    # marque claire (fond clair)
+│   ├── logo_dark.png     # marque sombre (fond sombre)
 │   ├── wave_logo.webp
 │   ├── Orange_Money_logo.png
 │   ├── mtnmomo_logo.webp
@@ -60,21 +55,22 @@ assets/
 
 | Export | Contenu |
 | --- | --- |
-| `logos` | `light`, `dark` |
+| `logos` | `light`, `dark` — **seules** sources UI via `BrandLogo` |
 | `operatorLogos` | `wave`, `orange`, `mtn`, `moov` |
 | `splash` | `light`, `dark` |
 | `backgrounds` | `worldLight`, `africaNetworkLight`, `africaNetworkDark` |
 | `authAssets` | `loginPreview` |
 | `lottieAssets` | `networkOrbit`, `securePulse`, `transferFlow` |
 
-`logo-horizontal.png` et `app-icon.png` sont disponibles sur disque (stores / marketing) ; les écrans utilisent surtout `logos` + `operatorLogos`.
+**Interdit en UI :** `app-icon.png`. Utiliser `logos.light` / `logos.dark` (ou `BrandLogo`).
 
 ## Usage
 
 ```ts
 import { logos, operatorLogos, splash, backgrounds, lottieAssets } from '../assets';
+import { BrandLogo } from '../components/brand/BrandLogo';
 
-<Image source={logos.light} />
+<BrandLogo variant="icon" size={72} plate="plain" />
 <Image source={operatorLogos.wave} />
 ```
 
