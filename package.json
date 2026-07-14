@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
-    "android:release": "cd android && ./gradlew :app:assembleRelease",
+    "android:release": "cd android && ./gradlew :app:assembleRelease && cp -f app/build/outputs/apk/release/AfrikaTrans-*-release.apk ../",
     "android:bundle": "cd android && ./gradlew :app:bundleRelease",
     "ios": "react-native run-ios",
     "lint": "eslint .",

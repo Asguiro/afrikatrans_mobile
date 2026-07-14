@@ -40,11 +40,11 @@ Le backend n’est pas encore branché en prod : l’app tourne déjà en **mode
 
 ### Logos marque
 
-| Light | Dark |
-| :---: | :---: |
-| <img src="src/assets/logos/logo_light.png" width="96" alt="Logo light" /> | <img src="src/assets/logos/logo_dark.png" width="96" alt="Logo dark" /> |
+| Light | Dark | Horizontal |
+| :---: | :---: | :---: |
+| <img src="src/assets/logos/logo_light.png" width="96" alt="Logo light" /> | <img src="src/assets/logos/logo_dark.png" width="96" alt="Logo dark" /> | <img src="src/assets/logos/logo-horizontal.png" width="180" alt="Logo horizontal" /> |
 
-Marque UI exclusivement via `BrandLogo` (`logo_light` / `logo_dark`). Ne pas utiliser `app-icon.png` dans l’app.
+Marque UI **uniquement** via le composant `BrandLogo` (PNG stylisé : `resizeMode="contain"`, pastille claire pour le wordmark en dark). Ne pas importer les PNG logo en dur dans les écrans.
 
 ### Opérateurs
 
@@ -149,6 +149,7 @@ Sorties :
 | Artefact | Chemin |
 | --- | --- |
 | APK release | `android/app/build/outputs/apk/release/AfrikaTrans-<version>-release.apk` |
+| APK (copie racine) | `AfrikaTrans-<version>-release.apk` (gitignored) |
 | AAB release | `android/app/build/outputs/bundle/release/app-release.aab` |
 
 Signature alignée sur la [doc React Native — Signed APK](https://reactnative.dev/docs/signed-apk-android). Conservez le keystore et les mots de passe hors Git (backup chiffré recommandé).

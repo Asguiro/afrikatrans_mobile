@@ -66,7 +66,7 @@ export function OnboardingScreen({navigation}: Props) {
             paddingHorizontal: theme.spacing['2xl'],
           },
         ]}>
-        <BrandLogo variant="wordmark" size={64} plate="plain" />
+        <BrandLogo variant="horizontal" size={48} plate="plain" />
         <View style={styles.hero}>
           <LottieHero name={slide.lottie} size={240} />
         </View>

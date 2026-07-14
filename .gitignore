@@ -44,6 +44,10 @@ local.properties
 android/keystore.properties
 .secrets/
 
+# APK artefacts (copies locales, ex. racine projet)
+*.apk
+!android/app/src/**/*.apk
+
 # node.js
 #
 node_modules/

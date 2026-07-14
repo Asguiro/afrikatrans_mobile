@@ -7,6 +7,7 @@ Catalogue central : [`index.ts`](./index.ts). **Toujours** importer depuis ce mo
 <p>
   <img src="logos/logo_light.png" alt="Logo light" width="88" />
   <img src="logos/logo_dark.png" alt="Logo dark" width="88" />
+  <img src="logos/logo-horizontal.png" alt="Logo horizontal" width="200" />
 </p>
 
 <p>
@@ -29,8 +30,9 @@ Catalogue central : [`index.ts`](./index.ts). **Toujours** importer depuis ce mo
 ```text
 assets/
 ├── logos/
-│   ├── logo_light.png    # marque claire (fond clair)
-│   ├── logo_dark.png     # marque sombre (fond sombre)
+│   ├── logo_light.png       # picto PNG transparent (fond clair)
+│   ├── logo_dark.png        # picto PNG transparent (fond sombre)
+│   ├── logo-horizontal.png  # wordmark PNG (~3:1)
 │   ├── wave_logo.webp
 │   ├── Orange_Money_logo.png
 │   ├── mtnmomo_logo.webp
@@ -55,24 +57,30 @@ assets/
 
 | Export | Contenu |
 | --- | --- |
-| `logos` | `light`, `dark` — **seules** sources UI via `BrandLogo` |
-| `operatorLogos` | `wave`, `orange`, `mtn`, `moov` |
+| `logos` | `light`, `dark`, `horizontal` — **uniquement** via `BrandLogo` |
+| `operatorLogos` | `wave`, `orange`, `mtn`, `moov` — via `OperatorLogoMark` |
 | `splash` | `light`, `dark` |
 | `backgrounds` | `worldLight`, `africaNetworkLight`, `africaNetworkDark` |
 | `authAssets` | `loginPreview` |
 | `lottieAssets` | `networkOrbit`, `securePulse`, `transferFlow` |
 
-**Interdit en UI :** `app-icon.png`. Utiliser `logos.light` / `logos.dark` (ou `BrandLogo`).
-
 ## Usage
 
+Les logos marque sont des **PNG** (transparence / fonds intégrés) : toujours passer par un composant qui gère `contain`, ratio et pastille.
+
 ```ts
-import { logos, operatorLogos, splash, backgrounds, lottieAssets } from '../assets';
 import { BrandLogo } from '../components/brand/BrandLogo';
+import { OperatorLogoMark } from '../features/transfer/components/OperatorBrandGrid';
 
 <BrandLogo variant="icon" size={72} plate="plain" />
-<Image source={operatorLogos.wave} />
+<BrandLogo variant="horizontal" size={48} />
+<OperatorLogoMark brand={brand} size={56} />
 ```
+
+| Variante `BrandLogo` | Source | Notes |
+| --- | --- | --- |
+| `icon` | `logo_light` / `logo_dark` | Picto carré, thème auto |
+| `horizontal` / `wordmark` | `logo-horizontal` | Ratio ~3:1 ; pastille claire auto en dark |
 
 ## Lottie (iOS)
 
@@ -90,3 +98,4 @@ Télécharge `lottie-ios` en local (`vendor/`, gitignored) puis lance `pod insta
 - Ne pas committer de secrets ni de captures personnelles dans `assets/`.
 - Optimiser les PNG lourds avant d’en ajouter de nouveaux (idéalement &lt; 300 Ko pour l’UI runtime).
 - Les fichiers `reference/admin/` ne doivent pas être branchés dans l’UI mobile.
+- Ne pas réintroduire d’asset type « app-icon » pre-plaqué dans `src/assets` : l’UI consomme les PNG light/dark/horizontal via `BrandLogo`.

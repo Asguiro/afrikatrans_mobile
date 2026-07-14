@@ -3,8 +3,12 @@
  * Les visuels admin (`reference/admin`) restent hors UI mobile.
  */
 export const logos = {
+  /** Picto PNG transparent — fond clair. */
   light: require('./logos/logo_light.png'),
+  /** Picto PNG transparent — fond sombre. */
   dark: require('./logos/logo_dark.png'),
+  /** Wordmark horizontal PNG (ratio ≈ 3:1). Toujours via `BrandLogo`. */
+  horizontal: require('./logos/logo-horizontal.png'),
 } as const;
 
 export const operatorLogos = {

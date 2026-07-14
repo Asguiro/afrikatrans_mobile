@@ -12,7 +12,7 @@ import {BrandLogo} from '../../../components/brand/BrandLogo';
 
 /**
  * Splash de bootstrap : visible tant que `hydrate()` n’a pas terminé.
- * Logo = `logo_light` / `logo_dark` via BrandLogo (jamais app-icon).
+ * Marque via `BrandLogo` (`logo_light` / `logo_dark` PNG).
  */
 export function SplashScreen() {
   const theme = useTheme();
@@ -37,7 +37,7 @@ export function SplashScreen() {
         ]}
       />
       <View style={styles.content}>
-        <BrandLogo variant="wordmark" size={128} plate="plain" />
+        <BrandLogo variant="icon" size={112} plate="plain" />
         <Text
           style={[
             styles.tagline,
