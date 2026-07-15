@@ -60,10 +60,23 @@ export let mockUser: UserProfile = {
   phone: '+221771234567',
   countryCode: 'SN',
   email: 'amadou.diallo@example.com',
+  avatarUrl: null,
   kycStatus: 'APPROVED',
   hasPin: true,
   biometricEnabled: false,
 };
+
+import {env} from '../../config/env';
+
+/** Mot de passe démo mutable (jamais exposé hors couche mock). */
+export let mockPassword = 'Demo1234!';
+
+/** PIN de déverrouillage démo (mock uniquement). */
+export const DEMO_PIN = env.DEMO_PIN;
+
+export function setMockPassword(password: string) {
+  mockPassword = password;
+}
 
 export let mockKyc: KycProfile = {
   status: 'APPROVED',
@@ -114,6 +127,8 @@ export let mockTransactions: Transaction[] = [
     destinationCountryCode: 'CI',
     sourceOperatorName: 'Wave',
     destinationOperatorName: 'Orange Money',
+    sourceAccountPhone: '+221771234567',
+    destinationPhone: '+2250700123456',
     sendAmount: 25000,
     receiveAmount: 24350,
     feeAmount: 650,

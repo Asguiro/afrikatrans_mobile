@@ -1,14 +1,11 @@
-import React, {useEffect, useMemo, useState} from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
-import {useForm, Controller} from 'react-hook-form';
-import {zodResolver} from '@hookform/resolvers/zod';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
+import {Alert, StyleSheet, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
 import type {TransferStackParamList} from '../../../navigation/types';
 import type {Quote} from '../../../types/api';
-import {authApi, catalogApi, transferApi} from '../../../services/api';
+import {authApi, transferApi} from '../../../services/api';
 import {Screen} from '../../../components/ui/Screen';
 import {Button} from '../../../components/ui/Button';
-import {TextField} from '../../../components/ui/TextField';
 import {useTransferDraftStore} from '../../../stores/transferDraftStore';
 import {useSessionStore} from '../../../stores/sessionStore';
 import {
@@ -19,7 +16,6 @@ import {
   useTransactionQuery,
   useUpsertBeneficiaryMutation,
 } from '../../../hooks/queries';
-import {pinSchema} from '../../../schemas/forms';
 import {unwrap, createId} from '../../../services/api/helpers';
 import {formatMoney, formatStatus} from '../../../utils/format';
 import {useTheme} from '../../../theme/ThemeProvider';
@@ -28,38 +24,20 @@ import {
   LoadingState,
 } from '../../../components/feedback/StateViews';
 import {useInputFocusChain} from '../../../hooks/useInputFocusChain';
-import {z} from 'zod';
 import {AmountComposer} from '../components/AmountComposer';
-import {
-  OperatorBrandGrid,
-  OperatorLogoMark,
-} from '../components/OperatorBrandGrid';
-import {PhoneCountryField} from '../../../components/ui/PhoneCountryField';
-import {QuoteSummaryCard} from '../components/QuoteSummaryCard';
+import {TransferRecapCard} from '../components/TransferRecapCard';
 import {PhysicalReceipt} from '../components/PhysicalReceipt';
+import {ConfirmPinModal} from '../components/ConfirmPinModal';
+import {shareReceiptAsImage} from '../utils/shareReceiptAsImage';
 import {
   COUNTRY_FLAGS,
   getBrandByCode,
-  type OperatorBrandCode,
 } from '../constants/operatorBrands';
-import {
-  estimateTransferAmounts,
-  resolveOperator,
-  resolveSourceOperator,
-} from '../utils/transferMath';
-import {composePhone, stripDialCode} from '../../../utils/phone';
+import {estimateTransferAmounts} from '../utils/transferMath';
+import {OperatorLogoMark} from '../components/OperatorBrandGrid';
 
-type OperatorProps = NativeStackScreenProps<
-  TransferStackParamList,
-  'SelectOperator'
->;
-type PhonesProps = NativeStackScreenProps<
-  TransferStackParamList,
-  'TransferPhones'
->;
 type AmountProps = NativeStackScreenProps<TransferStackParamList, 'Amount'>;
-type QuoteProps = NativeStackScreenProps<TransferStackParamList, 'Quote'>;
-type PinProps = NativeStackScreenProps<TransferStackParamList, 'ConfirmPin'>;
+type ReviewProps = NativeStackScreenProps<TransferStackParamList, 'Review'>;
 type ProcessingProps = NativeStackScreenProps<
   TransferStackParamList,
   'Processing'
@@ -67,261 +45,11 @@ type ProcessingProps = NativeStackScreenProps<
 type SuccessProps = NativeStackScreenProps<TransferStackParamList, 'Success'>;
 type ReceiptProps = NativeStackScreenProps<TransferStackParamList, 'Receipt'>;
 
-export function SelectOperatorScreen({navigation}: OperatorProps) {
-  const theme = useTheme();
-  const reset = useTransferDraftStore(s => s.reset);
-  const setDraft = useTransferDraftStore(s => s.setDraft);
-  const selected = useTransferDraftStore(s => s.destinationOperatorCode);
-
-  return (
-    <Screen
-      title="Envoyer de l’argent"
-      subtitle="Choisissez le réseau du destinataire.">
-      <OperatorBrandGrid
-        selectedCode={selected}
-        onSelect={(code: OperatorBrandCode) => {
-          reset();
-          setDraft({destinationOperatorCode: code});
-          navigation.navigate('TransferPhones');
-        }}
-      />
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Annuler le transfert"
-        onPress={() => navigation.getParent()?.goBack()}
-        style={({pressed}) => ({
-          marginTop: theme.spacing['2xl'],
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: theme.controlHeights.medium,
-          paddingHorizontal: theme.spacing.lg,
-          opacity: pressed ? 0.7 : 1,
-        })}>
-        <Text style={{color: theme.colors.textSecondary, fontWeight: '600'}}>
-          Annuler
-        </Text>
-      </Pressable>
-    </Screen>
-  );
-}
-
-export function TransferPhonesScreen({navigation}: PhonesProps) {
-  const theme = useTheme();
-  const user = useSessionStore(s => s.user);
-  const draft = useTransferDraftStore();
-  const setDraft = useTransferDraftStore(s => s.setDraft);
-  const {data: countries, isLoading, isError, refetch} = useCountriesQuery();
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const {fieldProps} = useInputFocusChain([
-    'sourcePhone',
-    'destPhone',
-    'firstName',
-    'lastName',
-  ] as const);
-
-  const defaultSourceCountry = user?.countryCode ?? 'SN';
-  const [sourceCountry, setSourceCountry] = useState(
-    draft.sourceCountryCode ?? defaultSourceCountry,
-  );
-  const [destCountry, setDestCountry] = useState(
-    draft.destinationCountryCode ?? 'CI',
-  );
-
-  const sourceDial =
-    countries?.find(c => c.code === sourceCountry)?.dialCode ?? '+221';
-  const destDial =
-    countries?.find(c => c.code === destCountry)?.dialCode ?? '+225';
-
-  const [sourceNumber, setSourceNumber] = useState(() =>
-    stripDialCode(
-      draft.sourceAccountPhone ?? user?.phone ?? '771234567',
-      sourceDial,
-    ),
-  );
-  const [destNumber, setDestNumber] = useState(() =>
-    stripDialCode(draft.destinationPhone ?? '0700123456', destDial),
-  );
-  const [firstName, setFirstName] = useState(
-    draft.destinationFirstName ?? '',
-  );
-  const [lastName, setLastName] = useState(draft.destinationLastName ?? '');
-
-  const brand = getBrandByCode(draft.destinationOperatorCode);
-  const sourceCurrency =
-    countries?.find(c => c.code === sourceCountry)?.currency ?? 'XOF';
-  const destCurrency =
-    countries?.find(c => c.code === destCountry)?.currency ?? 'XOF';
-
-  if (isLoading) {
-    return <LoadingState />;
-  }
-  if (isError || !countries) {
-    return <ErrorState message="Pays indisponibles" onRetry={refetch} />;
-  }
-
-  const onContinue = async () => {
-    setError(null);
-    if (!draft.destinationOperatorCode) {
-      setError('Choisissez d’abord un réseau');
-      return;
-    }
-    if (sourceNumber.length < 8 || destNumber.length < 8) {
-      setError('Vérifiez les numéros de téléphone');
-      return;
-    }
-    setBusy(true);
-    try {
-      const operators = unwrap(await catalogApi.listOperators());
-      const sourceOp = resolveSourceOperator(operators, sourceCountry);
-      const destOp = resolveOperator(
-        operators,
-        destCountry,
-        draft.destinationOperatorCode,
-      );
-
-      if (!sourceOp || sourceOp.status !== 'AVAILABLE') {
-        setError('Aucun réseau payeur disponible pour ce pays.');
-        return;
-      }
-      if (!destOp) {
-        setError(
-          `${brand?.name ?? 'Ce réseau'} n’est pas disponible en ${
-            countries.find(c => c.code === destCountry)?.name ?? destCountry
-          }.`,
-        );
-        return;
-      }
-      if (destOp.status !== 'AVAILABLE') {
-        setError(`${destOp.name} est en maintenance.`);
-        return;
-      }
-
-      setDraft({
-        sourceCountryCode: sourceCountry,
-        destinationCountryCode: destCountry,
-        sourceOperatorId: sourceOp.id,
-        destinationOperatorId: destOp.id,
-        sourceAccountPhone: composePhone(sourceDial, sourceNumber),
-        destinationPhone: composePhone(destDial, destNumber),
-        destinationFirstName: firstName.trim() || 'Destinataire',
-        destinationLastName: lastName.trim() || destNumber.slice(-4),
-      });
-      navigation.navigate('Amount');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Impossible de continuer');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const sourcePhoneField = fieldProps('sourcePhone');
-  const destPhoneField = fieldProps('destPhone');
-  const firstNameField = fieldProps('firstName');
-  const lastNameField = fieldProps('lastName', {
-    onLastSubmit: () => {
-      void onContinue();
-    },
-  });
-
-  return (
-    <Screen
-      title="Numéros"
-      subtitle={
-        brand
-          ? `Envoi vers ${brand.name} · devises ${sourceCurrency} / ${destCurrency}`
-          : 'Expéditeur et destinataire'
-      }>
-      {brand ? (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: theme.spacing.xl,
-            gap: 12,
-          }}>
-          <OperatorLogoMark brand={brand} size={48} />
-          <Text
-            style={{
-              color: theme.colors.textPrimary,
-              fontWeight: '700',
-              fontSize: theme.typography.body,
-              flex: 1,
-            }}>
-            {brand.name}
-          </Text>
-        </View>
-      ) : null}
-      <PhoneCountryField
-        ref={sourcePhoneField.ref}
-        label="Votre numéro (payeur)"
-        countries={countries}
-        countryCode={sourceCountry}
-        nationalNumber={sourceNumber}
-        onCountryChange={setSourceCountry}
-        onNumberChange={setSourceNumber}
-        hint={`Devise débit : ${sourceCurrency}`}
-        returnKeyType={sourcePhoneField.returnKeyType}
-        submitBehavior={sourcePhoneField.submitBehavior}
-        accessoryActionLabel={sourcePhoneField.accessoryActionLabel}
-        onSubmitEditing={sourcePhoneField.onSubmitEditing}
-      />
-      <PhoneCountryField
-        ref={destPhoneField.ref}
-        label="Numéro du destinataire"
-        countries={countries}
-        countryCode={destCountry}
-        nationalNumber={destNumber}
-        onCountryChange={setDestCountry}
-        onNumberChange={setDestNumber}
-        hint={`Devise crédit : ${destCurrency}`}
-        returnKeyType={destPhoneField.returnKeyType}
-        submitBehavior={destPhoneField.submitBehavior}
-        accessoryActionLabel={destPhoneField.accessoryActionLabel}
-        onSubmitEditing={destPhoneField.onSubmitEditing}
-      />
-
-      <Text
-        style={{
-          color: theme.colors.textPrimary,
-          fontWeight: '600',
-          marginBottom: theme.spacing.sm,
-        }}>
-        Nom du destinataire (optionnel)
-      </Text>
-      <View style={{flexDirection: 'row', gap: 12, marginBottom: 16}}>
-        <View style={{flex: 1}}>
-          <TextField
-            ref={firstNameField.ref}
-            label="Prénom"
-            autoCapitalize="words"
-            value={firstName}
-            onChangeText={setFirstName}
-            returnKeyType={firstNameField.returnKeyType}
-            submitBehavior={firstNameField.submitBehavior}
-            onSubmitEditing={firstNameField.onSubmitEditing}
-          />
-        </View>
-        <View style={{flex: 1}}>
-          <TextField
-            ref={lastNameField.ref}
-            label="Nom"
-            autoCapitalize="words"
-            value={lastName}
-            onChangeText={setLastName}
-            returnKeyType={lastNameField.returnKeyType}
-            submitBehavior={lastNameField.submitBehavior}
-            onSubmitEditing={lastNameField.onSubmitEditing}
-          />
-        </View>
-      </View>
-
-      {error ? (
-        <Text style={{color: theme.colors.error, marginBottom: 12}}>{error}</Text>
-      ) : null}
-      <Button label="Continuer" loading={busy} onPress={onContinue} />
-    </Screen>
-  );
+function countryName(
+  countries: Array<{code: string; name: string}> | undefined,
+  code: string,
+): string {
+  return countries?.find(c => c.code === code)?.name ?? code;
 }
 
 export function AmountScreen({navigation}: AmountProps) {
@@ -345,8 +73,9 @@ export function AmountScreen({navigation}: AmountProps) {
     'XOF';
 
   const syncFromSend = (raw: string) => {
-    const amount = Number(raw.replace(/\D/g, '')) || 0;
-    setSendText(raw.replace(/\D/g, ''));
+    const digits = raw.replace(/\D/g, '');
+    const amount = Number(digits) || 0;
+    setSendText(digits);
     setActiveField('SEND');
     const est = estimateTransferAmounts(amount, 'SEND');
     setReceiveText(amount > 0 ? String(est.receiveAmount) : '');
@@ -354,8 +83,9 @@ export function AmountScreen({navigation}: AmountProps) {
   };
 
   const syncFromReceive = (raw: string) => {
-    const amount = Number(raw.replace(/\D/g, '')) || 0;
-    setReceiveText(raw.replace(/\D/g, ''));
+    const digits = raw.replace(/\D/g, '');
+    const amount = Number(digits) || 0;
+    setReceiveText(digits);
     setActiveField('RECEIVE');
     const est = estimateTransferAmounts(amount, 'RECEIVE');
     setSendText(amount > 0 ? String(est.totalDebitAmount) : '');
@@ -390,7 +120,7 @@ export function AmountScreen({navigation}: AmountProps) {
       !draft.destinationCountryCode ||
       !draft.destinationOperatorId
     ) {
-      setError('Parcours incomplet');
+      setError('Parcours incomplet — reprenez depuis l’accueil.');
       return;
     }
     try {
@@ -403,11 +133,25 @@ export function AmountScreen({navigation}: AmountProps) {
         amount,
       });
       setDraft({amount, amountMode: activeField, quoteId: quote.id});
-      navigation.navigate('Quote');
+      navigation.navigate('Review');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Devis impossible');
     }
   };
+
+  if (
+    !draft.sourceCountryCode ||
+    !draft.destinationCountryCode ||
+    !draft.sourceOperatorId ||
+    !draft.destinationOperatorId
+  ) {
+    return (
+      <ErrorState
+        message="Parcours incomplet. Reprenez depuis l’accueil."
+        onRetry={() => navigation.getParent()?.goBack()}
+      />
+    );
+  }
 
   const sendField = fieldProps('send');
   const receiveField = fieldProps('receive', {
@@ -419,14 +163,9 @@ export function AmountScreen({navigation}: AmountProps) {
   const brand = getBrandByCode(draft.destinationOperatorCode);
   const sourceFlag = COUNTRY_FLAGS[draft.sourceCountryCode ?? ''] ?? '';
   const destFlag = COUNTRY_FLAGS[draft.destinationCountryCode ?? ''] ?? '';
-  const beneficiaryName = [draft.destinationFirstName, draft.destinationLastName]
-    .filter(Boolean)
-    .join(' ');
 
   return (
-    <Screen
-      title="Combien ?"
-      subtitle="Saisissez le montant à envoyer, ou celui que le destinataire doit recevoir.">
+    <Screen>
       <View
         style={[
           amountStyles.corridor,
@@ -436,7 +175,7 @@ export function AmountScreen({navigation}: AmountProps) {
             borderRadius: theme.radius.lg,
           },
         ]}>
-        {brand ? <OperatorLogoMark brand={brand} size={44} /> : null}
+        {brand ? <OperatorLogoMark brand={brand} size={40} /> : null}
         <View style={{flex: 1, marginLeft: brand ? 12 : 0}}>
           <Text
             style={{
@@ -444,20 +183,18 @@ export function AmountScreen({navigation}: AmountProps) {
               fontWeight: '700',
               fontSize: theme.typography.body,
             }}>
-            {sourceFlag} {draft.sourceCountryCode ?? '—'} → {destFlag}{' '}
-            {draft.destinationCountryCode ?? '—'}
+            {sourceFlag} {draft.sourceCountryCode} → {destFlag}{' '}
+            {draft.destinationCountryCode}
             {brand ? ` · ${brand.name}` : ''}
           </Text>
-          {beneficiaryName ? (
-            <Text
-              style={{
-                color: theme.colors.textSecondary,
-                fontSize: theme.typography.caption,
-                marginTop: 2,
-              }}>
-              Pour {beneficiaryName}
-            </Text>
-          ) : null}
+          <Text
+            style={{
+              color: theme.colors.textSecondary,
+              fontSize: theme.typography.caption,
+              marginTop: 2,
+            }}>
+            {draft.destinationPhone}
+          </Text>
         </View>
       </View>
 
@@ -469,15 +206,15 @@ export function AmountScreen({navigation}: AmountProps) {
         feeAmount={preview.feeAmount}
         sendHelper={
           preview.sendAmount > 0 && activeField === 'SEND'
-            ? `Frais déduits · le destinataire reçoit ${formatMoney(preview.receiveAmount, currency)}`
+            ? `Le destinataire reçoit ${formatMoney(preview.receiveAmount, currency)}`
             : activeField === 'RECEIVE' && preview.totalDebitAmount > 0
-              ? 'Total prélevé sur votre compte (reçu + frais)'
-              : 'Appuyez ici pour indiquer ce que vous envoyez'
+              ? 'Total prélevé (reçu + frais)'
+              : 'Montant que vous envoyez'
         }
         receiveHelper={
           preview.receiveAmount > 0 && activeField === 'RECEIVE'
-            ? `Vous êtes débité de ${formatMoney(preview.totalDebitAmount, currency)}`
-            : 'Appuyez ici pour fixer le montant net reçu'
+            ? `Total à payer ${formatMoney(preview.totalDebitAmount, currency)}`
+            : 'Montant net reçu'
         }
         onChangeSend={syncFromSend}
         onChangeReceive={syncFromReceive}
@@ -509,11 +246,41 @@ export function AmountScreen({navigation}: AmountProps) {
         }}
       />
 
+      <View
+        style={[
+          amountStyles.feeRow,
+          {
+            borderColor: theme.colors.border,
+            backgroundColor: theme.colors.brandPrimarySoft,
+            borderRadius: theme.radius.md,
+          },
+        ]}>
+        <Text style={{color: theme.colors.textSecondary, fontWeight: '600'}}>
+          Frais estimés
+        </Text>
+        <Text style={{color: theme.colors.textPrimary, fontWeight: '800'}}>
+          {preview.feeAmount > 0
+            ? formatMoney(preview.feeAmount, currency)
+            : '—'}
+        </Text>
+      </View>
+      <Text
+        style={{
+          color: theme.colors.textMuted,
+          fontSize: theme.typography.caption,
+          marginBottom: theme.spacing.lg,
+        }}>
+        Total à payer :{' '}
+        {preview.totalDebitAmount > 0
+          ? formatMoney(preview.totalDebitAmount, currency)
+          : '—'}
+      </Text>
+
       {error ? (
         <Text style={{color: theme.colors.error, marginBottom: 12}}>{error}</Text>
       ) : null}
       <Button
-        label="Voir le devis"
+        label="Continuer"
         loading={createQuote.isPending}
         onPress={onSubmit}
       />
@@ -526,17 +293,34 @@ const amountStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    padding: 14,
-    marginBottom: 20,
+    padding: 12,
+    marginBottom: 16,
+  },
+  feeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginTop: 12,
+    marginBottom: 8,
   },
 });
 
-export function QuoteScreen({navigation}: QuoteProps) {
+export function TransferReviewScreen({navigation}: ReviewProps) {
   const theme = useTheme();
   const quoteId = useTransferDraftStore(s => s.quoteId);
   const draft = useTransferDraftStore();
+  const {data: countries} = useCountriesQuery();
+  const {data: beneficiaries} = useBeneficiariesQuery();
+  const createTxn = useCreateTransactionMutation();
+  const upsertBeneficiary = useUpsertBeneficiaryMutation();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pinError, setPinError] = useState<string | null>(null);
+  const isAppLocked = useSessionStore(s => s.isAppLocked);
 
   useEffect(() => {
     let cancelled = false;
@@ -560,69 +344,18 @@ export function QuoteScreen({navigation}: QuoteProps) {
     };
   }, [quoteId]);
 
-  if (!quote && !error) {
-    return <LoadingState label="Chargement du devis…" />;
-  }
-  if (error || !quote) {
-    return (
-      <ErrorState
-        message={error ?? 'Devis introuvable'}
-        onRetry={() => navigation.navigate('Amount')}
-      />
-    );
-  }
-
-  const brand = getBrandByCode(draft.destinationOperatorCode);
-  const corridor = `${quote.sourceCountryCode} → ${quote.destinationCountryCode}${
-    brand ? ` · ${brand.name}` : ''
-  }`;
-
-  return (
-    <Screen title="Confirmez le devis" subtitle="Vérifiez les montants avant le PIN.">
-      <QuoteSummaryCard quote={quote} corridorLabel={corridor} />
-      <Text style={{color: theme.colors.textSecondary, marginBottom: 16}}>
-        Destinataire : {draft.destinationFirstName} {draft.destinationLastName}
-        {'\n'}
-        {draft.destinationPhone}
-      </Text>
-      <Button
-        label="Confirmer avec le PIN"
-        onPress={() => navigation.navigate('ConfirmPin')}
-      />
-      <Button
-        label="Modifier le montant"
-        variant="ghost"
-        onPress={() => navigation.navigate('Amount')}
-        style={{marginTop: 8}}
-      />
-    </Screen>
-  );
-}
-
-export function ConfirmTransferPinScreen({navigation}: PinProps) {
-  const theme = useTheme();
-  const draft = useTransferDraftStore();
-  const createTxn = useCreateTransactionMutation();
-  const upsertBeneficiary = useUpsertBeneficiaryMutation();
-  const {data: beneficiaries} = useBeneficiariesQuery();
-  const [error, setError] = useState<string | null>(null);
-  const {control, handleSubmit, formState} = useForm<z.infer<typeof pinSchema>>({
-    resolver: zodResolver(pinSchema),
-    defaultValues: {pin: ''},
-  });
-  const {fieldProps} = useInputFocusChain(['pin'] as const);
-
-  const onSubmit = handleSubmit(async values => {
-    setError(null);
+  const onConfirmPin = async (pin: string) => {
+    setPinError(null);
     try {
-      unwrap(await authApi.verifyPin(values.pin));
+      unwrap(await authApi.verifyPin(pin));
       if (
         !draft.quoteId ||
         !draft.destinationOperatorId ||
         !draft.destinationPhone ||
-        !draft.destinationCountryCode
+        !draft.destinationCountryCode ||
+        !draft.sourceAccountPhone
       ) {
-        setError('Parcours incomplet');
+        setPinError('Parcours incomplet');
         return;
       }
 
@@ -645,54 +378,103 @@ export function ConfirmTransferPinScreen({navigation}: PinProps) {
       const txn = await createTxn.mutateAsync({
         quoteId: draft.quoteId,
         beneficiaryId: beneficiary.id,
+        sourceAccountPhone: draft.sourceAccountPhone,
         purpose: draft.purpose ?? 'aide familiale',
         idempotencyKey: createId('idem'),
       });
+      setPinOpen(false);
       navigation.replace('Processing', {transactionId: txn.id});
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Confirmation impossible');
+      setPinError(e instanceof Error ? e.message : 'Confirmation impossible');
     }
-  });
+  };
 
-  const pinField = fieldProps('pin', {
-    onLastSubmit: () => {
-      void onSubmit();
-    },
-  });
+  if (!quoteId) {
+    return (
+      <ErrorState
+        message="Aucun devis. Reprenez le montant."
+        onRetry={() => navigation.navigate('Amount')}
+      />
+    );
+  }
+
+  if (!quote && !error) {
+    return <LoadingState label="Chargement…" />;
+  }
+  if (error || !quote) {
+    return (
+      <ErrorState
+        message={error ?? 'Devis introuvable'}
+        onRetry={() => navigation.navigate('Amount')}
+      />
+    );
+  }
+
+  const sourceOpName =
+    getBrandByCode(draft.sourceOperatorCode)?.name ??
+    draft.sourceOperatorCode ??
+    '—';
+  const destOpName =
+    getBrandByCode(draft.destinationOperatorCode)?.name ??
+    draft.destinationOperatorCode ??
+    '—';
+  const beneficiaryName = [
+    draft.destinationFirstName,
+    draft.destinationLastName,
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
-    <Screen title="Confirmation" subtitle="Entrez votre PIN pour valider.">
-      <Controller
-        control={control}
-        name="pin"
-        render={({field: {onChange, value}}) => (
-          <TextField
-            ref={pinField.ref}
-            label="PIN"
-            secureTextEntry
-            keyboardType="number-pad"
-            maxLength={6}
-            value={value}
-            onChangeText={onChange}
-            error={formState.errors.pin?.message}
-            returnKeyType={pinField.returnKeyType}
-            submitBehavior={pinField.submitBehavior}
-            accessoryActionLabel={pinField.accessoryActionLabel}
-            onSubmitEditing={pinField.onSubmitEditing}
-          />
+    <Screen>
+      <TransferRecapCard
+        mode="preview"
+        quote={quote}
+        sourceCountryName={countryName(countries, quote.sourceCountryCode)}
+        destinationCountryName={countryName(
+          countries,
+          quote.destinationCountryCode,
         )}
+        sourceOperatorName={sourceOpName}
+        destinationOperatorName={destOpName}
+        sourceAccountPhone={draft.sourceAccountPhone ?? '—'}
+        destinationPhone={draft.destinationPhone ?? '—'}
+        beneficiaryName={beneficiaryName || undefined}
       />
-      {error ? (
-        <Text style={{color: theme.colors.error, marginBottom: 12}}>{error}</Text>
-      ) : null}
       <Button
-        label="Envoyer"
-        loading={
-          createTxn.isPending ||
-          upsertBeneficiary.isPending ||
-          formState.isSubmitting
-        }
-        onPress={onSubmit}
+        label="Confirmer"
+        onPress={() => {
+          setPinError(null);
+          setPinOpen(true);
+        }}
+      />
+      <Button
+        label="Modifier le montant"
+        variant="ghost"
+        onPress={() => navigation.navigate('Amount')}
+        style={{marginTop: 8}}
+      />
+      <Text
+        style={{
+          color: theme.colors.textMuted,
+          fontSize: theme.typography.caption,
+          marginTop: 12,
+          textAlign: 'center',
+        }}>
+        Le numéro de transaction sera attribué après confirmation.
+      </Text>
+
+      <ConfirmPinModal
+        visible={pinOpen && !isAppLocked}
+        loading={createTxn.isPending || upsertBeneficiary.isPending}
+        error={pinError}
+        onClose={() => {
+          if (!createTxn.isPending && !upsertBeneficiary.isPending) {
+            setPinOpen(false);
+            setPinError(null);
+          }
+        }}
+        onConfirm={onConfirmPin}
       />
     </Screen>
   );
@@ -708,58 +490,59 @@ export function ProcessingScreen({navigation, route}: ProcessingProps) {
   }, [data, navigation]);
 
   return (
-    <Screen title="Envoi en cours" subtitle="Patientez quelques instants…" scroll={false}>
+    <Screen scroll={false} centered>
       <LoadingState label={formatStatus(data?.status ?? 'PENDING_DEBIT')} />
     </Screen>
   );
 }
 
 export function SuccessScreen({navigation, route}: SuccessProps) {
-  const theme = useTheme();
+  const resetDraft = useTransferDraftStore(s => s.reset);
+  const receiptRef = useRef<View>(null);
+  const [sharing, setSharing] = useState(false);
   const {data, isLoading} = useTransactionQuery(route.params.transactionId);
+  const {data: countries} = useCountriesQuery();
+
   if (isLoading || !data) {
     return <LoadingState />;
   }
-  const ok = data.status === 'COMPLETED';
+
+  const onShare = async () => {
+    setSharing(true);
+    try {
+      await shareReceiptAsImage(receiptRef, data.reference);
+    } catch {
+      Alert.alert('Partage', 'Impossible de partager le reçu en image.');
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  const onFinish = () => {
+    resetDraft();
+    navigation.getParent()?.goBack();
+  };
+
   return (
-    <Screen
-      title={ok ? 'Argent envoyé' : 'Statut'}
-      subtitle={formatStatus(data.status)}>
-      <View
-        style={{
-          backgroundColor: ok ? theme.colors.successSoft : theme.colors.errorSoft,
-          borderRadius: theme.radius.lg,
-          padding: theme.spacing['2xl'],
-          marginBottom: theme.spacing['2xl'],
-          alignItems: 'center',
-        }}>
-        <Text
-          style={{
-            color: ok ? theme.colors.success : theme.colors.error,
-            fontSize: 28,
-            fontWeight: '900',
-          }}>
-          {formatMoney(data.receiveAmount, data.destinationCurrency)}
-        </Text>
-        <Text
-          style={{
-            color: theme.colors.textSecondary,
-            marginTop: 8,
-            textAlign: 'center',
-          }}>
-          reçus par {data.beneficiaryName}
-        </Text>
-      </View>
+    <Screen>
+      <PhysicalReceipt
+        ref={receiptRef}
+        transaction={data}
+        sourceCountryName={countryName(countries, data.sourceCountryCode)}
+        destinationCountryName={countryName(
+          countries,
+          data.destinationCountryCode,
+        )}
+      />
       <Button
-        label="Voir le reçu"
-        onPress={() =>
-          navigation.navigate('Receipt', {transactionId: data.id})
-        }
+        label="Partager le reçu"
+        onPress={onShare}
+        loading={sharing}
       />
       <Button
         label="Terminer"
         variant="secondary"
-        onPress={() => navigation.getParent()?.goBack()}
+        onPress={onFinish}
         style={{marginTop: 12}}
       />
     </Screen>
@@ -767,19 +550,53 @@ export function SuccessScreen({navigation, route}: SuccessProps) {
 }
 
 export function ReceiptScreen({navigation, route}: ReceiptProps) {
+  const receiptRef = useRef<View>(null);
+  const [sharing, setSharing] = useState(false);
   const {data, isLoading, isError, refetch} = useTransactionQuery(
     route.params.transactionId,
   );
+  const {data: countries} = useCountriesQuery();
+
   if (isLoading) {
     return <LoadingState />;
   }
   if (isError || !data) {
     return <ErrorState message="Reçu indisponible" onRetry={refetch} />;
   }
+
+  const onShare = async () => {
+    setSharing(true);
+    try {
+      await shareReceiptAsImage(receiptRef, data.reference);
+    } catch {
+      Alert.alert('Partage', 'Impossible de partager le reçu en image.');
+    } finally {
+      setSharing(false);
+    }
+  };
+
   return (
-    <Screen title="Reçu">
-      <PhysicalReceipt transaction={data} />
-      <Button label="Fermer" onPress={() => navigation.getParent()?.goBack()} />
+    <Screen>
+      <PhysicalReceipt
+        ref={receiptRef}
+        transaction={data}
+        sourceCountryName={countryName(countries, data.sourceCountryCode)}
+        destinationCountryName={countryName(
+          countries,
+          data.destinationCountryCode,
+        )}
+      />
+      <Button
+        label="Partager le reçu"
+        onPress={onShare}
+        loading={sharing}
+      />
+      <Button
+        label="Fermer"
+        variant="secondary"
+        onPress={() => navigation.getParent()?.goBack()}
+        style={{marginTop: 12}}
+      />
     </Screen>
   );
 }

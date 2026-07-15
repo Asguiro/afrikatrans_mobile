@@ -10,6 +10,29 @@ export function formatMoney(amount: number, currency = 'XOF'): string {
   }
 }
 
+/** Date + heure sur une ligne (reçu / récap). */
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return iso;
+  }
+  const date = d.toLocaleDateString('fr-FR');
+  const time = d.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  return `${date} ${time}`;
+}
+
+/** « Sénégal vers Côte d'Ivoire » à partir de noms de pays. */
+export function formatCorridorOperation(
+  sourceCountryName: string,
+  destinationCountryName: string,
+): string {
+  return `${sourceCountryName} vers ${destinationCountryName}`;
+}
+
 export function formatStatus(status: string): string {
   const map: Record<string, string> = {
     CREATED: 'Créée',

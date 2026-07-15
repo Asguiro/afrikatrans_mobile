@@ -11,6 +11,9 @@ import {AuthStepIndicator} from '../../../components/auth/AuthStepIndicator';
 import {pinSchema} from '../../../schemas/forms';
 import {authApi} from '../../../services/api';
 import {unwrap} from '../../../services/api/helpers';
+import {
+  enableBiometricUnlock,
+} from '../../../services/secureStorage';
 import {useSessionStore} from '../../../stores/sessionStore';
 import {useTheme} from '../../../theme/ThemeProvider';
 import {usePreferencesStore} from '../../../stores/preferencesStore';
@@ -24,6 +27,7 @@ type FormValues = z.infer<typeof pinSchema>;
 export function ConfirmPinScreen({route}: Props) {
   const theme = useTheme();
   const setSession = useSessionStore(s => s.setSession);
+  const refreshLocalAuth = useSessionStore(s => s.refreshLocalAuth);
   const setBiometricEnabled = usePreferencesStore(s => s.setBiometricEnabled);
   const draft = useRegisterDraftStore();
   const clearDraft = useRegisterDraftStore(s => s.clear);
@@ -46,11 +50,18 @@ export function ConfirmPinScreen({route}: Props) {
           password,
         }),
       );
-      setBiometricEnabled(enableBiometric);
+
+      let biometricOn = false;
+      if (enableBiometric) {
+        biometricOn = await enableBiometricUnlock();
+      }
+      setBiometricEnabled(biometricOn);
+
       await setSession(
-        {...login.user, hasPin: true, biometricEnabled: enableBiometric},
+        {...login.user, hasPin: true, biometricEnabled: biometricOn},
         login.tokens,
       );
+      await refreshLocalAuth();
       clearDraft();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Impossible de finaliser');

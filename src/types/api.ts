@@ -43,6 +43,7 @@ export type UserProfile = {
   phone: string;
   countryCode: string;
   email?: string | null;
+  avatarUrl?: string | null;
   kycStatus: KycStatus;
   hasPin: boolean;
   biometricEnabled: boolean;
@@ -119,6 +120,10 @@ export type Transaction = {
   destinationCountryCode: string;
   sourceOperatorName: string;
   destinationOperatorName: string;
+  /** Téléphone payeur (indicatif inclus). */
+  sourceAccountPhone: string;
+  /** Téléphone bénéficiaire (indicatif inclus). */
+  destinationPhone: string;
   sendAmount: number;
   receiveAmount: number;
   feeAmount: number;

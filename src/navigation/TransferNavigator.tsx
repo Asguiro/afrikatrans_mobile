@@ -2,11 +2,8 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {TransferStackParamList} from './types';
 import {
-  SelectOperatorScreen,
-  TransferPhonesScreen,
   AmountScreen,
-  QuoteScreen,
-  ConfirmTransferPinScreen,
+  TransferReviewScreen,
   ProcessingScreen,
   SuccessScreen,
   ReceiptScreen,
@@ -19,45 +16,31 @@ export function TransferNavigator() {
   const theme = useTheme();
   return (
     <Stack.Navigator
+      initialRouteName="Amount"
       screenOptions={{
         headerTintColor: theme.colors.brandPrimary,
         headerStyle: {backgroundColor: theme.colors.background},
         contentStyle: {backgroundColor: theme.colors.background},
       }}>
       <Stack.Screen
-        name="SelectOperator"
-        component={SelectOperatorScreen}
-        options={{title: 'Envoyer'}}
-      />
-      <Stack.Screen
-        name="TransferPhones"
-        component={TransferPhonesScreen}
-        options={{title: 'Numéros'}}
-      />
-      <Stack.Screen
         name="Amount"
         component={AmountScreen}
         options={{title: 'Montant'}}
       />
       <Stack.Screen
-        name="Quote"
-        component={QuoteScreen}
-        options={{title: 'Devis'}}
-      />
-      <Stack.Screen
-        name="ConfirmPin"
-        component={ConfirmTransferPinScreen}
-        options={{title: 'PIN'}}
+        name="Review"
+        component={TransferReviewScreen}
+        options={{title: 'Récapitulatif'}}
       />
       <Stack.Screen
         name="Processing"
         component={ProcessingScreen}
-        options={{title: 'Traitement', headerBackVisible: false}}
+        options={{title: 'Envoi', headerBackVisible: false}}
       />
       <Stack.Screen
         name="Success"
         component={SuccessScreen}
-        options={{title: 'Résultat', headerBackVisible: false}}
+        options={{title: 'Reçu', headerBackVisible: false}}
       />
       <Stack.Screen
         name="Receipt"

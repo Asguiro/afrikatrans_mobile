@@ -11,6 +11,7 @@ export const httpTransferApi: TransferApi = {
       body: {
         quoteId: input.quoteId,
         beneficiaryId: input.beneficiaryId,
+        sourceAccountPhone: input.sourceAccountPhone,
         purpose: input.purpose,
       },
       idempotencyKey: input.idempotencyKey,

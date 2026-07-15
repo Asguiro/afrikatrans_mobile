@@ -1,5 +1,5 @@
 import React from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
 import {useTheme} from '../../theme/ThemeProvider';
 
 type Props = {
@@ -186,11 +186,14 @@ export function StatusChip({
 export function Avatar({
   name,
   size = 64,
+  imageUri,
 }: {
   name: string;
   size?: number;
+  imageUri?: string | null;
 }) {
   const theme = useTheme();
+  const [imageFailed, setImageFailed] = React.useState(false);
   const initials = name
     .split(' ')
     .filter(Boolean)
@@ -198,6 +201,27 @@ export function Avatar({
     .join('')
     .slice(0, 2)
     .toUpperCase();
+
+  React.useEffect(() => {
+    setImageFailed(false);
+  }, [imageUri]);
+
+  if (imageUri && !imageFailed) {
+    return (
+      <Image
+        key={imageUri}
+        source={{uri: imageUri}}
+        accessibilityLabel={`Photo de ${name || 'profil'}`}
+        onError={() => setImageFailed(true)}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: theme.colors.brandPrimarySoft,
+        }}
+      />
+    );
+  }
 
   return (
     <View

@@ -1,5 +1,5 @@
-import React from 'react';
-import {Pressable, StyleSheet, Text, View} from 'react-native';
+import React, {useState} from 'react';
+import {StyleSheet, Text, View} from 'react-native';
 import type {CompositeScreenProps} from '@react-navigation/native';
 import type {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -8,16 +8,24 @@ import type {
   AppTabParamList,
 } from '../../../navigation/types';
 import {Screen} from '../../../components/ui/Screen';
+import {Button} from '../../../components/ui/Button';
 import {BrandLogo} from '../../../components/brand/BrandLogo';
 import {useTheme} from '../../../theme/ThemeProvider';
 import {useSessionStore} from '../../../stores/sessionStore';
-import {useTransactionsQuery} from '../../../hooks/queries';
-import {formatMoney, formatStatus} from '../../../utils/format';
+import {useTransferDraftStore} from '../../../stores/transferDraftStore';
+import {useCountriesQuery} from '../../../hooks/queries';
 import {
-  EmptyState,
   ErrorState,
   LoadingState,
 } from '../../../components/feedback/StateViews';
+import {useInputFocusChain} from '../../../hooks/useInputFocusChain';
+import {catalogApi} from '../../../services/api';
+import {unwrap} from '../../../services/api/helpers';
+import {composePhone, stripDialCode} from '../../../utils/phone';
+import {MessageCard} from '../components/MessageCard';
+import {CorridorPartyFields} from '../../transfer/components/CorridorPartyFields';
+import {resolveOperator} from '../../transfer/utils/transferMath';
+import type {OperatorBrandCode} from '../../transfer/constants/operatorBrands';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<AppTabParamList, 'HomeTab'>,
@@ -27,251 +35,190 @@ type Props = CompositeScreenProps<
 export function HomeScreen({navigation}: Props) {
   const theme = useTheme();
   const user = useSessionStore(s => s.user);
-  const {data, isLoading, isError, refetch} = useTransactionsQuery();
+  const draft = useTransferDraftStore();
+  const setDraft = useTransferDraftStore(s => s.setDraft);
+  const {data: countries, isLoading, isError, refetch} = useCountriesQuery();
+
+  const defaultSourceCountry = user?.countryCode ?? 'SN';
+  const [sourceCountry, setSourceCountry] = useState(
+    draft.sourceCountryCode ?? defaultSourceCountry,
+  );
+  const [destCountry, setDestCountry] = useState(
+    draft.destinationCountryCode ?? 'CI',
+  );
+  const [sourceOperatorCode, setSourceOperatorCode] = useState(
+    draft.sourceOperatorCode ?? 'WAVE',
+  );
+  const [destOperatorCode, setDestOperatorCode] = useState(
+    draft.destinationOperatorCode ?? 'ORANGE',
+  );
+
+  const sourceDial =
+    countries?.find(c => c.code === sourceCountry)?.dialCode ?? '+221';
+  const destDial =
+    countries?.find(c => c.code === destCountry)?.dialCode ?? '+225';
+
+  const [sourceNumber, setSourceNumber] = useState(() =>
+    stripDialCode(
+      draft.sourceAccountPhone ?? user?.phone ?? '771234567',
+      sourceDial,
+    ),
+  );
+  const [destNumber, setDestNumber] = useState(() =>
+    stripDialCode(draft.destinationPhone ?? '0700123456', destDial),
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const {fieldProps} = useInputFocusChain([
+    'sourcePhone',
+    'destPhone',
+  ] as const);
+
+  const onContinue = async () => {
+    setError(null);
+    if (!countries) {
+      setError('Catalogue pays indisponible');
+      return;
+    }
+    if (sourceNumber.length < 8 || destNumber.length < 8) {
+      setError('Vérifiez les numéros de téléphone');
+      return;
+    }
+
+    setBusy(true);
+    try {
+      const operators = unwrap(await catalogApi.listOperators());
+      const sourceOp = resolveOperator(
+        operators,
+        sourceCountry,
+        sourceOperatorCode,
+      );
+      const destOp = resolveOperator(
+        operators,
+        destCountry,
+        destOperatorCode,
+      );
+
+      if (!sourceOp || sourceOp.status !== 'AVAILABLE') {
+        setError('Opérateur payeur indisponible pour ce pays.');
+        return;
+      }
+      if (!destOp || destOp.status !== 'AVAILABLE') {
+        const destName =
+          countries.find(c => c.code === destCountry)?.name ?? destCountry;
+        setError(`Opérateur destinataire indisponible en ${destName}.`);
+        return;
+      }
+
+      setDraft({
+        sourceOperatorCode,
+        destinationOperatorCode: destOperatorCode,
+        sourceCountryCode: sourceCountry,
+        destinationCountryCode: destCountry,
+        sourceOperatorId: sourceOp.id,
+        destinationOperatorId: destOp.id,
+        sourceAccountPhone: composePhone(sourceDial, sourceNumber),
+        destinationPhone: composePhone(destDial, destNumber),
+        destinationFirstName: draft.destinationFirstName || 'Destinataire',
+        destinationLastName:
+          draft.destinationLastName || destNumber.slice(-4),
+        quoteId: undefined,
+      });
+
+      navigation.navigate('Transfer', {screen: 'Amount'});
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Impossible de continuer');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const sourcePhoneField = fieldProps('sourcePhone');
+  const destPhoneField = fieldProps('destPhone', {
+    onLastSubmit: () => {
+      void onContinue();
+    },
+  });
+
+  if (isLoading) {
+    return <LoadingState />;
+  }
+  if (isError || !countries) {
+    return <ErrorState message="Pays indisponibles" onRetry={refetch} />;
+  }
 
   return (
     <Screen scroll>
       <View style={styles.header}>
         <View style={{flex: 1}}>
           <Text
-            style={{
-              color: theme.colors.textMuted,
-              fontSize: theme.typography.bodySmall,
-              fontWeight: '600',
-            }}>
-            AfrikaTrans
-          </Text>
-          <Text
             accessibilityRole="header"
             style={{
               color: theme.colors.textPrimary,
               fontSize: theme.typography.h2,
               fontWeight: '800',
-              marginTop: 4,
             }}>
             Bonjour{user?.firstName ? `, ${user.firstName}` : ''}
           </Text>
         </View>
-        <BrandLogo variant="icon" size={44} plate="plain" />
+        <BrandLogo variant="icon" size={40} plate="plain" />
       </View>
 
-      <View
-        style={[
-          styles.hero,
-          {
-            backgroundColor: theme.colors.brandPrimary,
-            borderRadius: theme.radius.xl,
-          },
-        ]}>
-        <Text
-          style={{
-            color: theme.colors.onBrandPrimary,
-            opacity: 0.85,
-            fontSize: theme.typography.bodySmall,
-            fontWeight: '600',
-          }}>
-          Mobile Money
-        </Text>
-        <Text
-          style={{
-            color: theme.colors.onBrandPrimary,
-            fontSize: theme.typography.h3,
-            fontWeight: '800',
-            marginTop: 8,
-            lineHeight: 32,
-          }}>
-          Envoyez de l’argent en quelques taps
-        </Text>
-        <Text
-          style={{
-            color: theme.colors.onBrandPrimary,
-            opacity: 0.8,
-            marginTop: 8,
-            lineHeight: 20,
-          }}>
-          Wave, Orange Money, MTN, Moov — frais clairs, transfert rapide.
-        </Text>
+      <MessageCard rotateMs={10000} />
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Envoyer de l’argent"
-          onPress={() => navigation.navigate('Transfer')}
-          style={({pressed}) => [
-            styles.sendBtn,
-            {
-              backgroundColor: theme.colors.brandAccent,
-              opacity: pressed ? 0.9 : 1,
-            },
-          ]}>
-          <Text
-            style={{
-              color: theme.colors.textPrimary,
-              fontWeight: '800',
-              fontSize: theme.typography.bodyLarge,
-            }}>
-            Envoyer
-          </Text>
-        </Pressable>
-      </View>
+      <CorridorPartyFields
+        title="De"
+        countries={countries}
+        countryCode={sourceCountry}
+        nationalNumber={sourceNumber}
+        operatorCode={sourceOperatorCode}
+        phoneLabel="Numéro de l’expéditeur"
+        onCountryChange={setSourceCountry}
+        onNumberChange={setSourceNumber}
+        onOperatorChange={(code: OperatorBrandCode) =>
+          setSourceOperatorCode(code)
+        }
+        phoneField={{
+          ref: sourcePhoneField.ref,
+          returnKeyType:
+            sourcePhoneField.returnKeyType === 'next' ? 'next' : 'done',
+          submitBehavior: sourcePhoneField.submitBehavior,
+          accessoryActionLabel: sourcePhoneField.accessoryActionLabel,
+          onSubmitEditing: sourcePhoneField.onSubmitEditing,
+        }}
+      />
 
-      <View style={styles.quickRow}>
-        <QuickAction
-          label="Contacts"
-          onPress={() => navigation.navigate('BeneficiariesTab')}
-        />
-        <QuickAction
-          label="Activité"
-          onPress={() => navigation.navigate('ActivityTab')}
-        />
-        <QuickAction
-          label="KYC"
-          onPress={() => navigation.navigate('Kyc')}
-        />
-      </View>
+      <CorridorPartyFields
+        title="Vers"
+        countries={countries}
+        countryCode={destCountry}
+        nationalNumber={destNumber}
+        operatorCode={destOperatorCode}
+        phoneLabel="Numéro du bénéficiaire"
+        onCountryChange={setDestCountry}
+        onNumberChange={setDestNumber}
+        onOperatorChange={(code: OperatorBrandCode) =>
+          setDestOperatorCode(code)
+        }
+        phoneField={{
+          ref: destPhoneField.ref,
+          returnKeyType:
+            destPhoneField.returnKeyType === 'next' ? 'next' : 'done',
+          submitBehavior: destPhoneField.submitBehavior,
+          accessoryActionLabel: destPhoneField.accessoryActionLabel,
+          onSubmitEditing: destPhoneField.onSubmitEditing,
+        }}
+      />
 
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: theme.spacing.md,
-          marginTop: theme.spacing.sm,
-        }}>
-        <Text
-          style={{
-            color: theme.colors.textPrimary,
-            fontWeight: '700',
-            fontSize: theme.typography.h4,
-          }}>
-          Récents
+      {error ? (
+        <Text style={{color: theme.colors.error, marginBottom: 12}}>
+          {error}
         </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Voir toute l’activité"
-          hitSlop={8}
-          onPress={() => navigation.navigate('ActivityTab')}
-          style={{
-            minHeight: theme.controlHeights.medium,
-            justifyContent: 'center',
-            paddingHorizontal: 4,
-          }}>
-          <Text style={{color: theme.colors.brandPrimary, fontWeight: '600'}}>
-            Tout voir
-          </Text>
-        </Pressable>
-      </View>
-
-      {isLoading ? <LoadingState /> : null}
-      {isError ? (
-        <ErrorState message="Historique indisponible" onRetry={refetch} />
       ) : null}
-      {data?.slice(0, 5).map(txn => (
-        <Pressable
-          key={txn.id}
-          accessibilityRole="button"
-          onPress={() =>
-            navigation.navigate('TransactionDetail', {
-              transactionId: txn.id,
-            })
-          }
-          style={{
-            backgroundColor: theme.colors.surface,
-            borderRadius: theme.radius.lg,
-            padding: theme.spacing.lg,
-            marginBottom: theme.spacing.md,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 12,
-            borderWidth: 1,
-            borderColor: theme.colors.border,
-          }}>
-          <View
-            style={{
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              backgroundColor: theme.colors.brandPrimarySoft,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-            <Text
-              style={{
-                color: theme.colors.brandPrimary,
-                fontWeight: '800',
-              }}>
-              {txn.beneficiaryName
-                .split(' ')
-                .map(p => p[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase()}
-            </Text>
-          </View>
-          <View style={{flex: 1}}>
-            <Text style={{color: theme.colors.textPrimary, fontWeight: '700'}}>
-              {txn.beneficiaryName}
-            </Text>
-            <Text style={{color: theme.colors.textSecondary, marginTop: 2}}>
-              {txn.sourceOperatorName} → {txn.destinationOperatorName}
-            </Text>
-          </View>
-          <View style={{alignItems: 'flex-end'}}>
-            <Text style={{color: theme.colors.textPrimary, fontWeight: '700'}}>
-              {formatMoney(txn.sendAmount, txn.sourceCurrency)}
-            </Text>
-            <Text
-              style={{
-                color: theme.colors.textMuted,
-                fontSize: theme.typography.caption,
-                marginTop: 2,
-              }}>
-              {formatStatus(txn.status)}
-            </Text>
-          </View>
-        </Pressable>
-      ))}
-      {data && data.length === 0 ? (
-        <EmptyState
-          title="Aucun transfert"
-          description="Touchez Envoyer pour démarrer votre premier transfert."
-          actionLabel="Envoyer"
-          onAction={() => navigation.navigate('Transfer')}
-        />
-      ) : null}
+
+      <Button label="Continuer" loading={busy} onPress={onContinue} />
     </Screen>
-  );
-}
-
-function QuickAction({label, onPress}: {label: string; onPress: () => void}) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      onPress={onPress}
-      style={({pressed}) => [
-        {
-          flex: 1,
-          backgroundColor: theme.colors.surface,
-          borderRadius: theme.radius.md,
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-          paddingVertical: theme.spacing.md,
-          minHeight: theme.controlHeights.medium,
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: pressed ? 0.85 : 1,
-        },
-      ]}>
-      <Text
-        style={{
-          color: theme.colors.textPrimary,
-          fontWeight: '600',
-          fontSize: theme.typography.bodySmall,
-        }}>
-        {label}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -279,22 +226,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  hero: {
-    padding: 24,
-    marginBottom: 16,
-  },
-  sendBtn: {
-    marginTop: 20,
-    borderRadius: 14,
-    minHeight: 52,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
+    marginBottom: 12,
   },
 });

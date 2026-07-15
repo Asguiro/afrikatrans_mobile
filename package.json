@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "android": "react-native run-android",
-    "android:release": "cd android && ./gradlew :app:assembleRelease && cp -f app/build/outputs/apk/release/AfrikaTrans-*-release.apk ../",
+    "android:release": "cd android && ./gradlew :app:assembleRelease && APK=$(ls app/build/outputs/apk/release/AfrikaTrans-*-release.apk | head -1) && cp -f \"$APK\" \"../$(basename \"$APK\")\" && ls -lah \"../$(basename \"$APK\")\" && echo \"APK copié à la racine: $(basename \"$APK\")\"",
     "android:bundle": "cd android && ./gradlew :app:bundleRelease",
     "ios": "react-native run-ios",
     "lint": "eslint .",
@@ -25,10 +25,13 @@
     "react-hook-form": "^7.81.0",
     "react-native": "0.86.0",
     "react-native-gesture-handler": "^3.0.2",
+    "react-native-image-picker": "^8.2.1",
     "react-native-keychain": "^10.0.0",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.26.0",
+    "react-native-share": "^12.3.1",
     "react-native-svg": "^15.15.5",
+    "react-native-view-shot": "^5.1.1",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },

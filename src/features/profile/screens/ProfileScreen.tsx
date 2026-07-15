@@ -1,5 +1,5 @@
 import React from 'react';
-import {Text, View} from 'react-native';
+import {Pressable, Text, View} from 'react-native';
 import type {CompositeScreenProps} from '@react-navigation/native';
 import type {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
@@ -9,7 +9,7 @@ import {
   BadgeCheck,
   LogOut,
   ChevronRight,
-  Fingerprint,
+  UserRound,
 } from 'lucide-react-native';
 import type {
   AppStackParamList,
@@ -91,8 +91,12 @@ export function ProfileScreen({navigation}: Props) {
         Profil
       </Text>
 
-      <View
-        style={{
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Voir et modifier les informations personnelles"
+        onPress={() => navigation.navigate('EditProfile')}
+        style={({pressed}) => ({
+          opacity: pressed ? 0.9 : 1,
           backgroundColor: theme.colors.brandPrimary,
           borderRadius: theme.radius.xl,
           padding: theme.spacing['2xl'],
@@ -100,15 +104,18 @@ export function ProfileScreen({navigation}: Props) {
           flexDirection: 'row',
           alignItems: 'center',
           gap: 16,
-        }}>
+        })}>
         <View
           style={{
             borderWidth: 3,
             borderColor: theme.colors.onBrandPrimary,
             borderRadius: 35,
-            opacity: 1,
           }}>
-          <Avatar name={fullName || 'AT'} size={64} />
+          <Avatar
+            name={fullName || 'AT'}
+            size={64}
+            imageUri={user?.avatarUrl}
+          />
         </View>
         <View style={{flex: 1}}>
           <Text
@@ -135,13 +142,37 @@ export function ProfileScreen({navigation}: Props) {
             />
           </View>
         </View>
-      </View>
+        <ChevronRight color={theme.colors.onBrandPrimary} size={20} />
+      </Pressable>
+
+      <ListGroup title="Compte">
+        <ListRow
+          label="Informations personnelles"
+          subtitle="Nom, e-mail et photo de profil"
+          onPress={() => navigation.navigate('EditProfile')}
+          leading={
+            <IconBubble>
+              <UserRound
+                color={theme.colors.brandPrimary}
+                size={18}
+                strokeWidth={2}
+              />
+            </IconBubble>
+          }
+          trailing={
+            <ChevronRight color={theme.colors.textMuted} size={18} />
+          }
+          last
+        />
+      </ListGroup>
 
       <ListGroup title="Préférences">
         <ListRow
           label="Sécurité"
           subtitle={
-            biometricEnabled ? 'PIN et biométrie actifs' : 'PIN · biométrie off'
+            biometricEnabled
+              ? 'Mot de passe, PIN et biométrie'
+              : 'Mot de passe, PIN · biométrie off'
           }
           onPress={() => navigation.navigate('Security')}
           leading={
@@ -181,19 +212,6 @@ export function ProfileScreen({navigation}: Props) {
           }
           trailing={
             <ChevronRight color={theme.colors.textMuted} size={18} />
-          }
-          last
-        />
-      </ListGroup>
-
-      <ListGroup title="Confidentialité">
-        <ListRow
-          label="Biométrie"
-          value={biometricEnabled ? 'Activée' : 'Désactivée'}
-          leading={
-            <IconBubble soft={theme.colors.infoSoft}>
-              <Fingerprint color={theme.colors.info} size={18} strokeWidth={2} />
-            </IconBubble>
           }
           last
         />

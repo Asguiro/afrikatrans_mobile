@@ -119,6 +119,8 @@ export const mockTransferApi: TransferApi = {
       destinationCountryCode: quote.destinationCountryCode,
       sourceOperatorName: sourceOp?.name ?? 'Source',
       destinationOperatorName: destOp?.name ?? 'Destination',
+      sourceAccountPhone: input.sourceAccountPhone,
+      destinationPhone: beneficiary.phone,
       sendAmount: quote.sendAmount,
       receiveAmount: quote.receiveAmount,
       feeAmount: quote.feeAmount,

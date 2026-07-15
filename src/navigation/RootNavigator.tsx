@@ -3,7 +3,6 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {RootStackParamList, OnboardingStackParamList} from './types';
 import {SplashScreen} from '../features/onboarding/screens/SplashScreen';
 import {OnboardingScreen} from '../features/onboarding/screens/OnboardingScreen';
-import {AppLockScreen} from '../features/auth/screens/AppLockScreen';
 import {AuthNavigator} from './AuthNavigator';
 import {AppNavigator} from './AppNavigator';
 import {useSessionStore} from '../stores/sessionStore';
@@ -22,10 +21,13 @@ function OnboardingNavigator() {
   );
 }
 
+/**
+ * Le verrouillage s’affiche en overlay (Modal) hors du stack —
+ * on ne démonte jamais `App` pour préserver la navigation et les drafts.
+ */
 export function RootNavigator() {
   const theme = useTheme();
   const isAuthenticated = useSessionStore(s => s.isAuthenticated);
-  const isAppLocked = useSessionStore(s => s.isAppLocked);
   const isHydrated = useSessionStore(s => s.isHydrated);
   const onboardingCompleted = usePreferencesStore(s => s.onboardingCompleted);
 
@@ -38,8 +40,6 @@ export function RootNavigator() {
       }}>
       {!isHydrated ? (
         <RootStack.Screen name="Splash" component={SplashScreen} />
-      ) : isAuthenticated && isAppLocked ? (
-        <RootStack.Screen name="AppLock" component={AppLockScreen} />
       ) : isAuthenticated ? (
         <RootStack.Screen name="App" component={AppNavigator} />
       ) : !onboardingCompleted ? (

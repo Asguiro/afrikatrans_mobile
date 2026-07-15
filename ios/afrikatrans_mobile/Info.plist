@@ -35,6 +35,10 @@
 	</dict>
 	<key>NSFaceIDUsageDescription</key>
 	<string>AfrikaTrans utilise Face ID pour déverrouiller l’application de manière sécurisée.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AfrikaTrans utilise vos photos pour mettre à jour votre photo de profil.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AfrikaTrans utilise l’appareil photo pour votre photo de profil.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>RCTNewArchEnabled</key>

@@ -21,12 +21,15 @@ export type {
   AuthApi,
   BeneficiaryApi,
   CatalogApi,
+  ChangePasswordInput,
+  ChangePinInput,
   CreateQuoteInput,
   CreateTransactionInput,
   KycApi,
   LoginInput,
   RegisterInput,
   TransferApi,
+  UpdateMeInput,
   UpsertBeneficiaryInput,
 } from './contracts';
 

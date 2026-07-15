@@ -1,6 +1,8 @@
 import {create} from 'zustand';
 
 export type TransferDraft = {
+  /** Marque choisie côté payeur (Wave, Orange…). */
+  sourceOperatorCode?: string;
   /** Marque choisie pour le destinataire (Wave, Orange…). */
   destinationOperatorCode?: string;
   sourceCountryCode?: string;

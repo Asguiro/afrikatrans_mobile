@@ -1,11 +1,16 @@
 import React, {useEffect} from 'react';
-import {StatusBar, useColorScheme} from 'react-native';
-import {NavigationContainer, DefaultTheme, DarkTheme} from '@react-navigation/native';
+import {Modal, StatusBar, useColorScheme} from 'react-native';
+import {
+  NavigationContainer,
+  DefaultTheme,
+  DarkTheme,
+} from '@react-navigation/native';
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query';
 import {SafeAreaProvider} from 'react-native-safe-area-context';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import {ThemeProvider, useTheme} from './src/theme/ThemeProvider';
 import {RootNavigator} from './src/navigation/RootNavigator';
+import {AppLockScreen} from './src/features/auth/screens/AppLockScreen';
 import {usePreferencesStore} from './src/stores/preferencesStore';
 import {useBootstrapSession} from './src/hooks/useBootstrapSession';
 import {useAppLockOnBackground} from './src/hooks/useAppLockOnBackground';
@@ -25,15 +30,21 @@ function NavigationRoot() {
   const systemScheme = useColorScheme();
   const appearance = usePreferencesStore(s => s.appearance);
   const hydrate = useSessionStore(s => s.hydrate);
+  const isAuthenticated = useSessionStore(s => s.isAuthenticated);
+  const isAppLocked = useSessionStore(s => s.isAppLocked);
   useBootstrapSession();
   useAppLockOnBackground();
 
   useEffect(() => {
-    void hydrate();
+    void hydrate().catch(() => {});
   }, [hydrate]);
 
   const scheme =
-    appearance === 'system' ? systemScheme : appearance === 'dark' ? 'dark' : 'light';
+    appearance === 'system'
+      ? systemScheme
+      : appearance === 'dark'
+        ? 'dark'
+        : 'light';
 
   const navTheme = {
     ...(scheme === 'dark' ? DarkTheme : DefaultTheme),
@@ -57,6 +68,17 @@ function NavigationRoot() {
       <NavigationContainer theme={navTheme}>
         <RootNavigator />
       </NavigationContainer>
+      {isAuthenticated && isAppLocked ? (
+        <Modal
+          visible
+          animationType="fade"
+          presentationStyle="fullScreen"
+          onRequestClose={() => {
+            /* verrouillage volontaire — pas de retour matériel */
+          }}>
+          <AppLockScreen />
+        </Modal>
+      ) : null}
     </>
   );
 }

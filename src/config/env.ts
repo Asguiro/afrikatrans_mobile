@@ -7,4 +7,6 @@ export const env = {
   API_BASE_URL: 'https://api.afrikatrans.local/api/v1',
   QUOTE_TTL_MS: 5 * 60 * 1000,
   MOCK_LATENCY_MS: 400,
+  /** PIN de déverrouillage en mode mock uniquement. */
+  DEMO_PIN: '1234',
 } as const;

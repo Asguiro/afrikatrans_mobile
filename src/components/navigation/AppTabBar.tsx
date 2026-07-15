@@ -14,9 +14,9 @@ import type {AppTabParamList} from '../../navigation/types';
 
 const LABELS: Record<keyof AppTabParamList, string> = {
   HomeTab: 'Accueil',
-  ActivityTab: 'Activité',
+  ActivityTab: 'Historique',
   BeneficiariesTab: 'Contacts',
-  SupportTab: 'Aide',
+  SupportTab: 'Support',
   ProfileTab: 'Profil',
 };
 

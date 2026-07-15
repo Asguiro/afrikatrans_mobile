@@ -89,7 +89,9 @@ src/assets/
 React Native 0.86  ·  React 19  ·  TypeScript (strict)
 React Navigation   ·  TanStack Query  ·  Zustand
 React Hook Form    ·  Zod  ·  Lucide  ·  Lottie
-Keychain / Keystore (tokens sensibles)
+image-picker       ·  photo de profil
+view-shot / share  ·  reçu transfert en PNG partageable
+Keychain / Keystore (tokens, PIN, biométrie)
 ```
 
 **Interdit :** Expo, Expo Router.
@@ -182,6 +184,25 @@ Fichier : [`src/config/env.ts`](src/config/env.ts)
 
 Aucune secret dans le code. Tokens uniquement en Keychain / Keystore.
 
+### Démo mock (auth / profil)
+
+| Élément | Valeur |
+| --- | --- |
+| Mot de passe initial | `Demo1234!` (modifiable via Profil → Sécurité) |
+| OTP inscription | `123456` |
+| PIN démo (unlock) | `1234` (seedé en Keychain au login / hydrate mock) |
+| Nouveau PIN | 4–6 chiffres, pas de suites faibles (`1111`, `0000`…) — `1234` autorisé en mock |
+
+Endpoints profil / sécurité mockés (miroir HTTP quand `USE_MOCKS=false`) :
+
+```text
+GET|PATCH /me
+POST /auth/change-password
+POST /auth/pin
+POST /auth/pin/verify
+POST /auth/pin/change
+```
+
 ---
 
 ## Structure
@@ -214,6 +235,9 @@ Root
     ├── Bénéficiaires
     ├── Support
     └── Profil
+         ├── Informations (édition + photo)
+         ├── Sécurité (mdp · PIN · biométrie)
+         ├── Apparence
          └── Transfer (stack modal / dédié)
 ```
 
@@ -277,9 +301,18 @@ Les dossiers `docs/` (vision, specs, Prisma, Nest, etc.) sont **lecture seule** 
 ## Sécurité (rappel mobile)
 
 - Pas de token en AsyncStorage
-- Keychain (iOS) / Keystore (Android)
-- Biométrie locale uniquement
+- Keychain (iOS) / Keystore (Android) — tokens, PIN, secret biométrie
+- Biométrie locale uniquement (`BIOMETRY_CURRENT_SET`)
 - Jamais logger mot de passe, PIN, OTP, token ou documents KYC
+
+### Verrouillage application
+
+- Cold start : si session + PIN/biométrie → overlay de déverrouillage (remonté à chaque cycle)
+- Arrière-plan : verrouillage après ~1,5 s à l’entrée en `background` (y compris via `inactive` sur iOS) — jamais sur `inactive` seul
+- Intent système (galerie, share, Linking, prompt biométrie) : verrouillage suspendu jusqu’au retour `active`
+- Après unlock : cooldown ~2,5 s pour éviter le re-lock Android
+- Keychain incohérent (ni PIN ni biométrie) : déconnexion forcée, pas d’unlock silencieux
+- Overlay `Modal` (ne démonte pas la navigation App ; masque le PIN transfert tant que verrouillé)
 
 ---
 

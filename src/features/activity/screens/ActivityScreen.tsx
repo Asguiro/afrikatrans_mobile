@@ -62,12 +62,15 @@ export function ActivityScreen({navigation}: Props) {
   }
   if (isError) {
     return (
-      <ErrorState message="Impossible de charger l’activité" onRetry={refetch} />
+      <ErrorState
+        message="Impossible de charger l’historique"
+        onRetry={refetch}
+      />
     );
   }
 
   return (
-    <Screen title="Activité" subtitle="Historique de vos transferts.">
+    <Screen title="Historique" subtitle="Vos transferts passés.">
       <View
         style={{
           flexDirection: 'row',

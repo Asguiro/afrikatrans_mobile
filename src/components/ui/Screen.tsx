@@ -60,9 +60,16 @@ export function Screen({
     };
   }, []);
 
-  // Avec un header de stack, on décale iOS. Sur Android, adjustResize + padding.
   const keyboardVerticalOffset =
     Platform.OS === 'ios' ? Math.max(headerHeight, insets.top) : 0;
+
+  // Header stack = safe-area déjà géré — éviter le double padding.
+  const topPadding =
+    headerHeight > 0
+      ? theme.spacing.lg
+      : centered
+        ? theme.spacing.lg
+        : Math.max(insets.top, 12);
 
   const content = (
     <View
@@ -70,9 +77,7 @@ export function Screen({
         styles.inner,
         centered && !keyboardVisible && styles.centeredInner,
         {
-          paddingTop: centered
-            ? theme.spacing.lg
-            : Math.max(insets.top, 12),
+          paddingTop: topPadding,
           paddingBottom: Math.max(insets.bottom, 16),
           paddingHorizontal: theme.spacing['2xl'],
         },
@@ -119,7 +124,6 @@ export function Screen({
             : theme.colors.background,
         },
       ]}
-      // iOS : padding. Android : adjustResize natif (AndroidManifest) + décentrage au clavier.
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={keyboardVerticalOffset}>
       {scroll ? (

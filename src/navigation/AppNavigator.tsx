@@ -10,6 +10,9 @@ import {
   AppearanceScreen,
   SecurityScreen,
 } from '../features/profile/screens/SettingsScreens';
+import {EditProfileScreen} from '../features/profile/screens/EditProfileScreen';
+import {ChangePasswordScreen} from '../features/profile/screens/ChangePasswordScreen';
+import {ChangePinScreen} from '../features/profile/screens/ChangePinScreen';
 import {useTheme} from '../theme/ThemeProvider';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -57,6 +60,21 @@ export function AppNavigator() {
         name="Security"
         component={SecurityScreen}
         options={{title: 'Sécurité'}}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{title: 'Informations'}}
+      />
+      <Stack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        options={{title: 'Mot de passe'}}
+      />
+      <Stack.Screen
+        name="ChangePin"
+        component={ChangePinScreen}
+        options={{title: 'Code PIN'}}
       />
     </Stack.Navigator>
   );

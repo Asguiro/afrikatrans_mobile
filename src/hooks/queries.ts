@@ -6,7 +6,13 @@ import {
   kycApi,
   transferApi,
 } from '../services/api';
+import type {
+  ChangePasswordInput,
+  ChangePinInput,
+  UpdateMeInput,
+} from '../services/api';
 import {unwrap} from '../services/api/helpers';
+import {useSessionStore} from '../stores/sessionStore';
 
 export const queryKeys = {
   me: ['me'] as const,
@@ -24,6 +30,43 @@ export function useMeQuery(enabled = true) {
     queryKey: queryKeys.me,
     queryFn: async () => unwrap(await authApi.me()),
     enabled,
+  });
+}
+
+export function useUpdateMeMutation() {
+  const qc = useQueryClient();
+  const setUser = useSessionStore(s => s.setUser);
+  return useMutation({
+    mutationFn: async (input: UpdateMeInput) =>
+      unwrap(await authApi.updateMe(input)),
+    onSuccess: user => {
+      setUser(user);
+      qc.setQueryData(queryKeys.me, user);
+    },
+  });
+}
+
+export function useChangePasswordMutation() {
+  return useMutation({
+    mutationFn: async (input: ChangePasswordInput) =>
+      unwrap(await authApi.changePassword(input)),
+  });
+}
+
+export function useChangePinMutation() {
+  const qc = useQueryClient();
+  const setUser = useSessionStore(s => s.setUser);
+  return useMutation({
+    mutationFn: async (input: ChangePinInput) =>
+      unwrap(await authApi.changePin(input)),
+    onSuccess: result => {
+      const current = useSessionStore.getState().user;
+      if (current) {
+        const next = {...current, hasPin: result.hasPin};
+        setUser(next);
+        qc.setQueryData(queryKeys.me, next);
+      }
+    },
   });
 }
 

@@ -24,13 +24,10 @@ export type KycStackParamList = {
 };
 
 export type TransferStackParamList = {
-  /** Réseau destinataire (Wave, Orange Money…). */
-  SelectOperator: undefined;
-  /** Téléphones expéditeur + destinataire (pays / indicatif / numéro). */
-  TransferPhones: undefined;
+  /** Montants envoyé / reçu + frais (après Home De/Vers). */
   Amount: undefined;
-  Quote: undefined;
-  ConfirmPin: undefined;
+  /** Récapitulatif devis + identité (+ modal PIN). */
+  Review: undefined;
   Processing: {transactionId: string};
   Success: {transactionId: string};
   Receipt: {transactionId: string};
@@ -52,6 +49,9 @@ export type AppStackParamList = {
   BeneficiaryForm: {beneficiaryId?: string} | undefined;
   Appearance: undefined;
   Security: undefined;
+  EditProfile: undefined;
+  ChangePassword: undefined;
+  ChangePin: undefined;
 };
 
 export type RootStackParamList = {
@@ -59,7 +59,6 @@ export type RootStackParamList = {
   Onboarding: NavigatorScreenParams<OnboardingStackParamList>;
   Auth: NavigatorScreenParams<AuthStackParamList>;
   App: NavigatorScreenParams<AppStackParamList>;
-  AppLock: undefined;
 };
 
 declare global {

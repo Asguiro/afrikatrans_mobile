@@ -1,17 +1,28 @@
 import React, {useCallback, useEffect, useState} from 'react';
 import {Alert, Pressable, StyleSheet, Switch, Text, View} from 'react-native';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {Check, Moon, Monitor, Sun} from 'lucide-react-native';
+import {
+  Check,
+  ChevronRight,
+  KeyRound,
+  Lock,
+  Moon,
+  Monitor,
+  Sun,
+} from 'lucide-react-native';
 import type {AppStackParamList} from '../../../navigation/types';
 import {Screen} from '../../../components/ui/Screen';
 import {ListGroup, ListRow, IconBubble} from '../../../components/ui/ListRow';
 import {usePreferencesStore} from '../../../stores/preferencesStore';
+import {useSessionStore} from '../../../stores/sessionStore';
 import {useTheme} from '../../../theme/ThemeProvider';
 import {
   disableBiometricUnlock,
   enableBiometricUnlock,
   getSupportedBiometryType,
+  hasStoredPin,
 } from '../../../services/secureStorage';
+import {withAppLockSuppressed} from '../../../stores/appLockGateStore';
 
 type AppearanceProps = NativeStackScreenProps<AppStackParamList, 'Appearance'>;
 type SecurityProps = NativeStackScreenProps<AppStackParamList, 'Security'>;
@@ -145,52 +156,89 @@ export function AppearanceScreen(_props: AppearanceProps) {
   );
 }
 
-export function SecurityScreen(_props: SecurityProps) {
+export function SecurityScreen({navigation}: SecurityProps) {
   const theme = useTheme();
   const biometricEnabled = usePreferencesStore(s => s.biometricEnabled);
   const setBiometricEnabled = usePreferencesStore(s => s.setBiometricEnabled);
+  const refreshLocalAuth = useSessionStore(s => s.refreshLocalAuth);
   const [biometryAvailable, setBiometryAvailable] = useState(false);
+  const [biometryLabel, setBiometryLabel] = useState('Face ID / empreinte');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     void getSupportedBiometryType().then(type => {
       setBiometryAvailable(Boolean(type));
+      if (type === 'FaceID') {
+        setBiometryLabel('Face ID');
+      } else if (type === 'TouchID' || type === 'Fingerprint') {
+        setBiometryLabel('Empreinte');
+      } else if (type) {
+        setBiometryLabel(type);
+      }
     });
   }, []);
 
+  const enableBiometrics = useCallback(async () => {
+    if (!biometryAvailable) {
+      Alert.alert(
+        'Biométrie indisponible',
+        'Aucune Face ID / empreinte n’est configurée sur cet appareil.',
+      );
+      return;
+    }
+    const pinConfigured = await hasStoredPin();
+    if (!pinConfigured) {
+      Alert.alert(
+        'PIN requis',
+        'Configurez d’abord un code PIN avant d’activer la biométrie.',
+      );
+      return;
+    }
+    const ok = await withAppLockSuppressed(() => enableBiometricUnlock());
+    if (!ok) {
+      Alert.alert(
+        'Activation impossible',
+        'La biométrie n’a pas pu être activée. Réessayez.',
+      );
+      return;
+    }
+    setBiometricEnabled(true);
+    await refreshLocalAuth();
+  }, [biometryAvailable, refreshLocalAuth, setBiometricEnabled]);
+
+  const disableBiometrics = useCallback(async () => {
+    await disableBiometricUnlock();
+    setBiometricEnabled(false);
+    await refreshLocalAuth();
+  }, [refreshLocalAuth, setBiometricEnabled]);
+
   const onToggleBiometrics = useCallback(
-    async (next: boolean) => {
+    (next: boolean) => {
       if (busy) {
         return;
       }
-      setBusy(true);
-      try {
-        if (next) {
-          if (!biometryAvailable) {
-            Alert.alert(
-              'Biométrie indisponible',
-              'Aucune Face ID / empreinte n’est configurée sur cet appareil.',
-            );
-            return;
-          }
-          const ok = await enableBiometricUnlock();
-          if (!ok) {
-            Alert.alert(
-              'Activation impossible',
-              'La biométrie n’a pas pu être activée. Réessayez.',
-            );
-            return;
-          }
-          setBiometricEnabled(true);
-          return;
-        }
-        await disableBiometricUnlock();
-        setBiometricEnabled(false);
-      } finally {
-        setBusy(false);
+      if (next) {
+        setBusy(true);
+        void enableBiometrics().finally(() => setBusy(false));
+        return;
       }
+      Alert.alert(
+        'Désactiver la biométrie ?',
+        'Vous utiliserez uniquement votre code PIN pour déverrouiller l’application.',
+        [
+          {text: 'Annuler', style: 'cancel'},
+          {
+            text: 'Désactiver',
+            style: 'destructive',
+            onPress: () => {
+              setBusy(true);
+              void disableBiometrics().finally(() => setBusy(false));
+            },
+          },
+        ],
+      );
     },
-    [biometryAvailable, busy, setBiometricEnabled],
+    [busy, disableBiometrics, enableBiometrics],
   );
 
   return (
@@ -211,15 +259,41 @@ export function SecurityScreen(_props: SecurityProps) {
             lineHeight: 20,
           }}>
           Les jetons d’accès sont stockés dans le Keychain / Keystore — jamais
-          en AsyncStorage. L’app se verrouille au démarrage et en arrière-plan.
+          en AsyncStorage. L’app se verrouille au démarrage et après une courte
+          absence en arrière-plan (PIN / biométrie).
         </Text>
       </View>
 
-      <ListGroup title="Authentification">
+      <ListGroup title="Identifiants">
+        <ListRow
+          label="Mot de passe"
+          subtitle="Changer le mot de passe de connexion"
+          onPress={() => navigation.navigate('ChangePassword')}
+          leading={
+            <IconBubble>
+              <KeyRound
+                color={theme.colors.brandPrimary}
+                size={18}
+                strokeWidth={2}
+              />
+            </IconBubble>
+          }
+          trailing={
+            <ChevronRight color={theme.colors.textMuted} size={18} />
+          }
+        />
         <ListRow
           label="Code PIN"
-          subtitle="Requis pour déverrouiller et confirmer un transfert"
-          value="Actif"
+          subtitle="Déverrouillage et confirmation de transfert"
+          onPress={() => navigation.navigate('ChangePin')}
+          leading={
+            <IconBubble soft={theme.colors.warningSoft}>
+              <Lock color={theme.colors.warning} size={18} strokeWidth={2} />
+            </IconBubble>
+          }
+          trailing={
+            <ChevronRight color={theme.colors.textMuted} size={18} />
+          }
           last
         />
       </ListGroup>
@@ -239,7 +313,7 @@ export function SecurityScreen(_props: SecurityProps) {
                 color: theme.colors.textPrimary,
                 fontWeight: '600',
               }}>
-              Face ID / empreinte
+              {biometryLabel}
             </Text>
             <Text
               style={{
@@ -253,12 +327,10 @@ export function SecurityScreen(_props: SecurityProps) {
             </Text>
           </View>
           <Switch
-            accessibilityLabel="Activer Face ID ou empreinte"
+            accessibilityLabel={`Activer ${biometryLabel}`}
             value={biometricEnabled}
             disabled={busy || (!biometryAvailable && !biometricEnabled)}
-            onValueChange={value => {
-              void onToggleBiometrics(value);
-            }}
+            onValueChange={onToggleBiometrics}
             trackColor={{
               false: theme.colors.border,
               true: theme.colors.brandPrimary,

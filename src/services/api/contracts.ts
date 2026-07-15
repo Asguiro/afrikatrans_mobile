@@ -35,6 +35,8 @@ export type CreateQuoteInput = {
 export type CreateTransactionInput = {
   quoteId: string;
   beneficiaryId: string;
+  /** Téléphone payeur pour le reçu / audit. */
+  sourceAccountPhone: string;
   purpose?: string;
   idempotencyKey: string;
 };
@@ -47,6 +49,23 @@ export type UpsertBeneficiaryInput = {
   countryCode: string;
   operatorId: string;
   favorite?: boolean;
+};
+
+export type UpdateMeInput = {
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  avatarUrl?: string | null;
+};
+
+export type ChangePasswordInput = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export type ChangePinInput = {
+  currentPin: string;
+  newPin: string;
 };
 
 export type AuthApi = {
@@ -62,8 +81,15 @@ export type AuthApi = {
     refreshToken: string,
   ) => Promise<ApiResponse<{tokens: AuthTokens}>>;
   me: () => Promise<ApiResponse<UserProfile>>;
+  updateMe: (input: UpdateMeInput) => Promise<ApiResponse<UserProfile>>;
+  changePassword: (
+    input: ChangePasswordInput,
+  ) => Promise<ApiResponse<{updated: boolean}>>;
   setPin: (pin: string) => Promise<ApiResponse<{hasPin: boolean}>>;
   verifyPin: (pin: string) => Promise<ApiResponse<{valid: boolean}>>;
+  changePin: (
+    input: ChangePinInput,
+  ) => Promise<ApiResponse<{hasPin: boolean}>>;
 };
 
 export type CatalogApi = {

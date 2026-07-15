@@ -3,7 +3,12 @@ import {Linking, Text, View} from 'react-native';
 import {Mail, MessageCircle, ChevronRight} from 'lucide-react-native';
 import {Screen} from '../../../components/ui/Screen';
 import {ListGroup, ListRow, IconBubble} from '../../../components/ui/ListRow';
+import {withAppLockSuppressed} from '../../../stores/appLockGateStore';
 import {useTheme} from '../../../theme/ThemeProvider';
+
+function openExternalUrl(url: string): void {
+  void withAppLockSuppressed(() => Linking.openURL(url));
+}
 
 const faqs = [
   {
@@ -23,12 +28,12 @@ const faqs = [
 export function SupportScreen() {
   const theme = useTheme();
   return (
-    <Screen title="Aide" subtitle="Réponses rapides et contact support.">
+    <Screen title="Support" subtitle="Réponses rapides et contact support.">
       <ListGroup title="Nous contacter">
         <ListRow
           label="E-mail support"
           subtitle="support@afrikatrans.example"
-          onPress={() => Linking.openURL('mailto:support@afrikatrans.example')}
+          onPress={() => openExternalUrl('mailto:support@afrikatrans.example')}
           leading={
             <IconBubble>
               <Mail color={theme.colors.brandPrimary} size={18} strokeWidth={2} />
@@ -39,7 +44,7 @@ export function SupportScreen() {
         <ListRow
           label="WhatsApp"
           subtitle="Réponse en quelques heures"
-          onPress={() => Linking.openURL('https://wa.me/221700000000')}
+          onPress={() => openExternalUrl('https://wa.me/221700000000')}
           leading={
             <IconBubble soft={theme.colors.successSoft}>
               <MessageCircle
