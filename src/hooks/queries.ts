@@ -13,6 +13,10 @@ import type {
 } from '../services/api';
 import {unwrap} from '../services/api/helpers';
 import {useSessionStore} from '../stores/sessionStore';
+import {
+  invalidateDeviceContactsCache,
+  loadDeviceContacts,
+} from '../services/deviceContacts';
 
 export const queryKeys = {
   me: ['me'] as const,
@@ -23,6 +27,7 @@ export const queryKeys = {
   transaction: (id: string) => ['transaction', id] as const,
   quote: (id: string) => ['quote', id] as const,
   kyc: ['kyc'] as const,
+  deviceContacts: ['deviceContacts'] as const,
 };
 
 export function useMeQuery(enabled = true) {
@@ -83,6 +88,27 @@ export function useOperatorsQuery(countryCode?: string) {
     queryFn: async () => unwrap(await catalogApi.listOperators(countryCode)),
     enabled: Boolean(countryCode),
   });
+}
+
+const CONTACTS_STALE_MS = 5 * 60 * 1000;
+
+/** Contacts device — cache TanStack + mémoire (TTL 5 min). */
+export function useDeviceContactsQuery(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.deviceContacts,
+    queryFn: () => loadDeviceContacts(),
+    enabled,
+    staleTime: CONTACTS_STALE_MS,
+    gcTime: CONTACTS_STALE_MS * 2,
+  });
+}
+
+export function useInvalidateDeviceContacts() {
+  const qc = useQueryClient();
+  return () => {
+    invalidateDeviceContactsCache();
+    void qc.invalidateQueries({queryKey: queryKeys.deviceContacts});
+  };
 }
 
 export function useBeneficiariesQuery() {

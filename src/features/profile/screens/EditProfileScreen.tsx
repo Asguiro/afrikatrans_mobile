@@ -14,6 +14,7 @@ import {Avatar} from '../../../components/ui/ListRow';
 import {updateProfileSchema} from '../../../schemas/forms';
 import {useUpdateMeMutation, useCountriesQuery} from '../../../hooks/queries';
 import {useSessionStore} from '../../../stores/sessionStore';
+import {useAppPermissions} from '../../../hooks/useAppPermissions';
 import {withAppLockSuppressed} from '../../../stores/appLockGateStore';
 import {useProfileDraftStore} from '../../../stores/profileDraftStore';
 import {useTheme} from '../../../theme/ThemeProvider';
@@ -33,6 +34,7 @@ export function EditProfileScreen({navigation}: Props) {
   const clearPendingAvatar = useProfileDraftStore(s => s.clearPendingAvatar);
   const avatarUri = pendingAvatarUri ?? user?.avatarUrl ?? null;
   const [formError, setFormError] = useState<string | null>(null);
+  const {ensure} = useAppPermissions();
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
   const countryName =
@@ -62,6 +64,10 @@ export function EditProfileScreen({navigation}: Props) {
   ] as const);
 
   const pickPhoto = async () => {
+    const allowed = await ensure('photoLibrary');
+    if (!allowed) {
+      return;
+    }
     try {
       await withAppLockSuppressed(async () => {
         const response = await launchImageLibrary({
@@ -76,14 +82,9 @@ export function EditProfileScreen({navigation}: Props) {
           return;
         }
         if (response.errorCode) {
-          const messages: Record<string, string> = {
-            permission:
-              'Autorisez l’accès à la photothèque dans les réglages.',
-            others: response.errorMessage ?? 'Impossible de choisir une photo',
-          };
           Alert.alert(
             'Photo',
-            messages[response.errorCode] ?? messages.others,
+            response.errorMessage ?? 'Impossible de choisir une photo',
           );
           return;
         }
@@ -95,7 +96,7 @@ export function EditProfileScreen({navigation}: Props) {
     } catch {
       Alert.alert(
         'Photo indisponible',
-        'Impossible d’ouvrir la galerie. Vérifiez les permissions ou reconstruisez l’app.',
+        'Impossible d’ouvrir la galerie pour le moment.',
       );
     }
   };

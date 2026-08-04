@@ -1,8 +1,10 @@
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import type {CompositeScreenProps} from '@react-navigation/native';
+import {useFocusEffect} from '@react-navigation/native';
 import type {BottomTabScreenProps} from '@react-navigation/bottom-tabs';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
+import {useQueryClient} from '@tanstack/react-query';
 import type {
   AppStackParamList,
   AppTabParamList,
@@ -13,31 +15,77 @@ import {BrandLogo} from '../../../components/brand/BrandLogo';
 import {useTheme} from '../../../theme/ThemeProvider';
 import {useSessionStore} from '../../../stores/sessionStore';
 import {useTransferDraftStore} from '../../../stores/transferDraftStore';
-import {useCountriesQuery} from '../../../hooks/queries';
+import {
+  queryKeys,
+  useCountriesQuery,
+  useOperatorsQuery,
+} from '../../../hooks/queries';
 import {
   ErrorState,
   LoadingState,
 } from '../../../components/feedback/StateViews';
 import {useInputFocusChain} from '../../../hooks/useInputFocusChain';
+import {useAppPermissions} from '../../../hooks/useAppPermissions';
 import {catalogApi} from '../../../services/api';
 import {unwrap} from '../../../services/api/helpers';
-import {composePhone, stripDialCode} from '../../../utils/phone';
+import {loadDeviceContacts} from '../../../services/deviceContacts';
+import {
+  composePhone,
+  parsePhoneAgainstCatalog,
+  stripDialCode,
+} from '../../../utils/phone';
 import {MessageCard} from '../components/MessageCard';
 import {CorridorPartyFields} from '../../transfer/components/CorridorPartyFields';
 import {resolveOperator} from '../../transfer/utils/transferMath';
-import type {OperatorBrandCode} from '../../transfer/constants/operatorBrands';
+import {
+  OPERATOR_BRANDS,
+  type OperatorBrandCode,
+} from '../../transfer/constants/operatorBrands';
+import type {Operator} from '../../../types/api';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<AppTabParamList, 'HomeTab'>,
   NativeStackScreenProps<AppStackParamList>
 >;
 
+function availableBrandCodes(operators: Operator[] | undefined): Set<string> {
+  const codes = new Set<string>();
+  for (const op of operators ?? []) {
+    if (op.status === 'AVAILABLE') {
+      codes.add(op.code);
+    }
+  }
+  return codes;
+}
+
+function disabledBrandCodes(operators: Operator[] | undefined): string[] {
+  if (!operators) {
+    return [];
+  }
+  const available = availableBrandCodes(operators);
+  return OPERATOR_BRANDS.map(b => b.code).filter(code => !available.has(code));
+}
+
+function pickAvailableBrand(
+  operators: Operator[] | undefined,
+  preferred?: string,
+): OperatorBrandCode {
+  const available = availableBrandCodes(operators);
+  if (preferred && available.has(preferred)) {
+    return preferred as OperatorBrandCode;
+  }
+  const first = OPERATOR_BRANDS.find(b => available.has(b.code));
+  return first?.code ?? 'ORANGE';
+}
+
 export function HomeScreen({navigation}: Props) {
   const theme = useTheme();
+  const queryClient = useQueryClient();
   const user = useSessionStore(s => s.user);
   const draft = useTransferDraftStore();
   const setDraft = useTransferDraftStore(s => s.setDraft);
   const {data: countries, isLoading, isError, refetch} = useCountriesQuery();
+  const {ensure} = useAppPermissions();
 
   const defaultSourceCountry = user?.countryCode ?? 'SN';
   const [sourceCountry, setSourceCountry] = useState(
@@ -53,6 +101,34 @@ export function HomeScreen({navigation}: Props) {
     draft.destinationOperatorCode ?? 'ORANGE',
   );
 
+  const {data: sourceOperators} = useOperatorsQuery(sourceCountry);
+  const {data: destOperators} = useOperatorsQuery(destCountry);
+
+  const sourceDisabledOps = useMemo(
+    () => disabledBrandCodes(sourceOperators),
+    [sourceOperators],
+  );
+  const destDisabledOps = useMemo(
+    () => disabledBrandCodes(destOperators),
+    [destOperators],
+  );
+
+  useEffect(() => {
+    if (!sourceOperators) {
+      return;
+    }
+    setSourceOperatorCode(current =>
+      pickAvailableBrand(sourceOperators, current),
+    );
+  }, [sourceOperators]);
+
+  useEffect(() => {
+    if (!destOperators) {
+      return;
+    }
+    setDestOperatorCode(current => pickAvailableBrand(destOperators, current));
+  }, [destOperators]);
+
   const sourceDial =
     countries?.find(c => c.code === sourceCountry)?.dialCode ?? '+221';
   const destDial =
@@ -67,13 +143,73 @@ export function HomeScreen({navigation}: Props) {
   const [destNumber, setDestNumber] = useState(() =>
     stripDialCode(draft.destinationPhone ?? '0700123456', destDial),
   );
+  const [beneficiaryName, setBeneficiaryName] = useState(() =>
+    [draft.destinationFirstName, draft.destinationLastName]
+      .filter(Boolean)
+      .join(' '),
+  );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const {fieldProps} = useInputFocusChain([
     'sourcePhone',
     'destPhone',
+    'beneficiaryName',
   ] as const);
+
+  /** Synchronise le formulaire après retour du picker contacts. */
+  useFocusEffect(
+    useCallback(() => {
+      const current = useTransferDraftStore.getState();
+      if (
+        !current.pendingContactApply ||
+        !current.destinationPhone ||
+        !countries
+      ) {
+        return;
+      }
+      const parsed = parsePhoneAgainstCatalog(
+        current.destinationPhone,
+        countries,
+      );
+      if (parsed) {
+        setDestCountry(parsed.countryCode);
+        setDestNumber(parsed.nationalNumber);
+      } else if (current.destinationCountryCode) {
+        setDestCountry(current.destinationCountryCode);
+        const dial =
+          countries.find(c => c.code === current.destinationCountryCode)
+            ?.dialCode ?? destDial;
+        setDestNumber(stripDialCode(current.destinationPhone, dial));
+      }
+      const name = [
+        current.destinationFirstName,
+        current.destinationLastName,
+      ]
+        .filter(Boolean)
+        .join(' ');
+      if (name) {
+        setBeneficiaryName(name);
+      }
+      if (current.destinationOperatorCode) {
+        setDestOperatorCode(current.destinationOperatorCode);
+      }
+      setDraft({pendingContactApply: false});
+    }, [countries, destDial, setDraft]),
+  );
+
+  const openContactPicker = async () => {
+    const allowed = await ensure('contacts');
+    if (!allowed) {
+      return;
+    }
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.deviceContacts,
+      queryFn: () => loadDeviceContacts(),
+      staleTime: 5 * 60 * 1000,
+    });
+    navigation.navigate('ContactPicker');
+  };
 
   const onContinue = async () => {
     setError(null);
@@ -83,6 +219,10 @@ export function HomeScreen({navigation}: Props) {
     }
     if (sourceNumber.length < 8 || destNumber.length < 8) {
       setError('Vérifiez les numéros de téléphone');
+      return;
+    }
+    if (!beneficiaryName.trim()) {
+      setError('Indiquez le nom du bénéficiaire');
       return;
     }
 
@@ -111,6 +251,10 @@ export function HomeScreen({navigation}: Props) {
         return;
       }
 
+      const nameParts = beneficiaryName.trim().split(/\s+/);
+      const firstName = nameParts[0] ?? 'Destinataire';
+      const lastName = nameParts.slice(1).join(' ') || destNumber.slice(-4);
+
       setDraft({
         sourceOperatorCode,
         destinationOperatorCode: destOperatorCode,
@@ -120,9 +264,8 @@ export function HomeScreen({navigation}: Props) {
         destinationOperatorId: destOp.id,
         sourceAccountPhone: composePhone(sourceDial, sourceNumber),
         destinationPhone: composePhone(destDial, destNumber),
-        destinationFirstName: draft.destinationFirstName || 'Destinataire',
-        destinationLastName:
-          draft.destinationLastName || destNumber.slice(-4),
+        destinationFirstName: firstName,
+        destinationLastName: lastName,
         quoteId: undefined,
       });
 
@@ -135,7 +278,8 @@ export function HomeScreen({navigation}: Props) {
   };
 
   const sourcePhoneField = fieldProps('sourcePhone');
-  const destPhoneField = fieldProps('destPhone', {
+  const destPhoneField = fieldProps('destPhone');
+  const nameField = fieldProps('beneficiaryName', {
     onLastSubmit: () => {
       void onContinue();
     },
@@ -173,12 +317,13 @@ export function HomeScreen({navigation}: Props) {
         countryCode={sourceCountry}
         nationalNumber={sourceNumber}
         operatorCode={sourceOperatorCode}
-        phoneLabel="Numéro de l’expéditeur"
+        phoneLabel="Numéro à débiter"
         onCountryChange={setSourceCountry}
         onNumberChange={setSourceNumber}
         onOperatorChange={(code: OperatorBrandCode) =>
           setSourceOperatorCode(code)
         }
+        disabledOperatorCodes={sourceDisabledOps}
         phoneField={{
           ref: sourcePhoneField.ref,
           returnKeyType:
@@ -201,6 +346,12 @@ export function HomeScreen({navigation}: Props) {
         onOperatorChange={(code: OperatorBrandCode) =>
           setDestOperatorCode(code)
         }
+        disabledOperatorCodes={destDisabledOps}
+        onContactPress={() => {
+          void openContactPicker();
+        }}
+        beneficiaryName={beneficiaryName}
+        onBeneficiaryNameChange={setBeneficiaryName}
         phoneField={{
           ref: destPhoneField.ref,
           returnKeyType:
@@ -208,6 +359,12 @@ export function HomeScreen({navigation}: Props) {
           submitBehavior: destPhoneField.submitBehavior,
           accessoryActionLabel: destPhoneField.accessoryActionLabel,
           onSubmitEditing: destPhoneField.onSubmitEditing,
+        }}
+        nameField={{
+          ref: nameField.ref,
+          returnKeyType: nameField.returnKeyType === 'next' ? 'next' : 'done',
+          submitBehavior: nameField.submitBehavior,
+          onSubmitEditing: nameField.onSubmitEditing,
         }}
       />
 

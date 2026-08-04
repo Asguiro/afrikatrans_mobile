@@ -28,6 +28,7 @@ import {AmountComposer} from '../components/AmountComposer';
 import {TransferRecapCard} from '../components/TransferRecapCard';
 import {PhysicalReceipt} from '../components/PhysicalReceipt';
 import {ConfirmPinModal} from '../components/ConfirmPinModal';
+import {TransferWarningModal} from '../components/TransferWarningModal';
 import {shareReceiptAsImage} from '../utils/shareReceiptAsImage';
 import {
   COUNTRY_FLAGS,
@@ -35,6 +36,8 @@ import {
 } from '../constants/operatorBrands';
 import {estimateTransferAmounts} from '../utils/transferMath';
 import {OperatorLogoMark} from '../components/OperatorBrandGrid';
+import {useAppPermissions} from '../../../hooks/useAppPermissions';
+import {usePreferencesStore} from '../../../stores/preferencesStore';
 
 type AmountProps = NativeStackScreenProps<TransferStackParamList, 'Amount'>;
 type ReviewProps = NativeStackScreenProps<TransferStackParamList, 'Review'>;
@@ -318,6 +321,7 @@ export function TransferReviewScreen({navigation}: ReviewProps) {
   const upsertBeneficiary = useUpsertBeneficiaryMutation();
   const [quote, setQuote] = useState<Quote | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [warningOpen, setWarningOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [pinError, setPinError] = useState<string | null>(null);
   const isAppLocked = useSessionStore(s => s.isAppLocked);
@@ -426,7 +430,7 @@ export function TransferReviewScreen({navigation}: ReviewProps) {
     .join(' ');
 
   return (
-    <Screen>
+    <Screen title="Confirmer le paiement">
       <TransferRecapCard
         mode="preview"
         quote={quote}
@@ -442,10 +446,10 @@ export function TransferReviewScreen({navigation}: ReviewProps) {
         beneficiaryName={beneficiaryName || undefined}
       />
       <Button
-        label="Confirmer"
+        label="Suivant"
         onPress={() => {
           setPinError(null);
-          setPinOpen(true);
+          setWarningOpen(true);
         }}
       />
       <Button
@@ -464,10 +468,25 @@ export function TransferReviewScreen({navigation}: ReviewProps) {
         Le numéro de transaction sera attribué après confirmation.
       </Text>
 
+      <TransferWarningModal
+        visible={warningOpen && !isAppLocked}
+        onClose={() => setWarningOpen(false)}
+        onConfirm={() => {
+          setWarningOpen(false);
+          setPinOpen(true);
+        }}
+      />
+
       <ConfirmPinModal
         visible={pinOpen && !isAppLocked}
         loading={createTxn.isPending || upsertBeneficiary.isPending}
         error={pinError}
+        summary={`Entrez votre PIN pour confirmer le paiement de ${formatMoney(
+          quote.totalDebitAmount,
+          quote.sourceCurrency,
+        )}${
+          beneficiaryName ? ` à ${beneficiaryName}` : ''
+        }.`}
         onClose={() => {
           if (!createTxn.isPending && !upsertBeneficiary.isPending) {
             setPinOpen(false);
@@ -497,11 +516,37 @@ export function ProcessingScreen({navigation, route}: ProcessingProps) {
 }
 
 export function SuccessScreen({navigation, route}: SuccessProps) {
+  const theme = useTheme();
   const resetDraft = useTransferDraftStore(s => s.reset);
   const receiptRef = useRef<View>(null);
   const [sharing, setSharing] = useState(false);
   const {data, isLoading} = useTransactionQuery(route.params.transactionId);
   const {data: countries} = useCountriesQuery();
+  const {request, check} = useAppPermissions();
+  const notificationsSoftPromptSeen = usePreferencesStore(
+    s => s.notificationsSoftPromptSeen,
+  );
+  const setNotificationsSoftPromptSeen = usePreferencesStore(
+    s => s.setNotificationsSoftPromptSeen,
+  );
+
+  useEffect(() => {
+    if (notificationsSoftPromptSeen) {
+      return;
+    }
+    setNotificationsSoftPromptSeen(true);
+    void (async () => {
+      const status = await check('notifications');
+      if (status === 'undetermined' || status === 'denied') {
+        await request('notifications');
+      }
+    })();
+  }, [
+    check,
+    request,
+    notificationsSoftPromptSeen,
+    setNotificationsSoftPromptSeen,
+  ]);
 
   if (isLoading || !data) {
     return <LoadingState />;
@@ -523,8 +568,52 @@ export function SuccessScreen({navigation, route}: SuccessProps) {
     navigation.getParent()?.goBack();
   };
 
+  const isSuccess = data.status === 'COMPLETED';
+
   return (
     <Screen>
+      <View style={{alignItems: 'center', marginBottom: 16}}>
+        <View
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 32,
+            backgroundColor: isSuccess
+              ? theme.colors.successSoft
+              : theme.colors.errorSoft,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 12,
+          }}>
+          <Text
+            style={{
+              color: isSuccess ? theme.colors.success : theme.colors.error,
+              fontSize: 28,
+              fontWeight: '800',
+            }}>
+            {isSuccess ? '✓' : '!'}
+          </Text>
+        </View>
+        <Text
+          accessibilityRole="header"
+          style={{
+            color: theme.colors.brandPrimary,
+            fontWeight: '800',
+            fontSize: theme.typography.h3,
+            textAlign: 'center',
+          }}>
+          {isSuccess ? 'Transaction réussie' : 'Transaction terminée'}
+        </Text>
+        <Text
+          style={{
+            color: theme.colors.textSecondary,
+            marginTop: 6,
+            textAlign: 'center',
+          }}>
+          Merci d’avoir utilisé AfrikaTrans
+        </Text>
+      </View>
+
       <PhysicalReceipt
         ref={receiptRef}
         transaction={data}
@@ -535,12 +624,12 @@ export function SuccessScreen({navigation, route}: SuccessProps) {
         )}
       />
       <Button
-        label="Partager le reçu"
+        label="Partager"
         onPress={onShare}
         loading={sharing}
       />
       <Button
-        label="Terminer"
+        label="Fermer"
         variant="secondary"
         onPress={onFinish}
         style={{marginTop: 12}}

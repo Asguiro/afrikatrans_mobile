@@ -11,7 +11,6 @@ import {
   type LottieHeroName,
 } from '../../../components/brand/LottieHero';
 import {useTheme} from '../../../theme/ThemeProvider';
-import {usePreferencesStore} from '../../../stores/preferencesStore';
 
 type Props = NativeStackScreenProps<OnboardingStackParamList, 'Onboarding'>;
 
@@ -45,14 +44,10 @@ export function OnboardingScreen({navigation}: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
-  const setOnboardingCompleted = usePreferencesStore(
-    s => s.setOnboardingCompleted,
-  );
   const slide = slides[index];
 
-  const finish = () => {
-    setOnboardingCompleted(true);
-    navigation.getParent()?.navigate('Auth');
+  const goToPermissions = () => {
+    navigation.navigate('Permissions');
   };
 
   return (
@@ -112,12 +107,12 @@ export function OnboardingScreen({navigation}: Props) {
           {index < slides.length - 1 ? (
             <Button label="Suivant" onPress={() => setIndex(i => i + 1)} />
           ) : (
-            <Button label="Commencer" onPress={finish} />
+            <Button label="Commencer" onPress={goToPermissions} />
           )}
           <Button
             label="Passer"
             variant="ghost"
-            onPress={finish}
+            onPress={goToPermissions}
             style={{marginTop: 12}}
           />
         </View>

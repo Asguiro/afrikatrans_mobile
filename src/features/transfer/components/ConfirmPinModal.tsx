@@ -22,6 +22,8 @@ type Props = {
   visible: boolean;
   loading?: boolean;
   error?: string | null;
+  /** Ex. « confirmer le paiement de 50 000 XOF ». */
+  summary?: string;
   onClose: () => void;
   onConfirm: (pin: string) => void | Promise<void>;
 };
@@ -34,6 +36,7 @@ export function ConfirmPinModal({
   visible,
   loading = false,
   error = null,
+  summary,
   onClose,
   onConfirm,
 }: Props) {
@@ -136,7 +139,7 @@ export function ConfirmPinModal({
                 fontSize: theme.typography.h3,
                 textAlign: 'center',
               }}>
-              Confirmer l’envoi
+              Confirmer le paiement
             </Text>
             <Text
               style={{
@@ -147,7 +150,8 @@ export function ConfirmPinModal({
                 marginBottom: theme.spacing.xl,
                 lineHeight: 20,
               }}>
-              Saisissez votre PIN pour valider le transfert.
+              {summary ??
+                'Saisissez votre PIN pour valider le transfert.'}
             </Text>
 
             <Controller

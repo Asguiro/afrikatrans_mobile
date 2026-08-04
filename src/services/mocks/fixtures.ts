@@ -51,6 +51,34 @@ export const mockOperators: Operator[] = [
     countryCode: 'CI',
     status: 'AVAILABLE',
   },
+  {
+    id: 'op-orange-ml',
+    code: 'ORANGE',
+    name: 'Orange Money',
+    countryCode: 'ML',
+    status: 'AVAILABLE',
+  },
+  {
+    id: 'op-moov-ml',
+    code: 'MOOV',
+    name: 'Moov Money',
+    countryCode: 'ML',
+    status: 'AVAILABLE',
+  },
+  {
+    id: 'op-orange-bf',
+    code: 'ORANGE',
+    name: 'Orange Money',
+    countryCode: 'BF',
+    status: 'AVAILABLE',
+  },
+  {
+    id: 'op-moov-bf',
+    code: 'MOOV',
+    name: 'Moov Money',
+    countryCode: 'BF',
+    status: 'AVAILABLE',
+  },
 ];
 
 export let mockUser: UserProfile = {

@@ -14,6 +14,8 @@ export type TransferDraft = {
   destinationFirstName?: string;
   destinationLastName?: string;
   beneficiaryId?: string;
+  /** True après sélection carnet — Home applique puis remet à false. */
+  pendingContactApply?: boolean;
   amountMode: 'SEND' | 'RECEIVE';
   amount?: number;
   purpose?: string;

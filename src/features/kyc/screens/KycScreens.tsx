@@ -20,6 +20,7 @@ import {
   LoadingState,
 } from '../../../components/feedback/StateViews';
 import {useSessionStore} from '../../../stores/sessionStore';
+import {useAppPermissions} from '../../../hooks/useAppPermissions';
 import {z} from 'zod';
 
 type IntroProps = NativeStackScreenProps<KycStackParamList, 'KycIntro'>;
@@ -191,10 +192,15 @@ export function KycDocumentScreen({navigation}: DocumentProps) {
   const theme = useTheme();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const {ensure} = useAppPermissions();
 
   const submit = async (
     documentType: 'PASSPORT' | 'NATIONAL_ID' | 'RESIDENCE_PERMIT',
   ) => {
+    const allowed = await ensure('photoLibrary');
+    if (!allowed) {
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -234,6 +240,7 @@ export function KycSelfieScreen({navigation}: SelfieProps) {
   const theme = useTheme();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const {ensure} = useAppPermissions();
 
   return (
     <Screen title="Selfie" subtitle="Contrôle vivacité mock.">
@@ -244,6 +251,10 @@ export function KycSelfieScreen({navigation}: SelfieProps) {
         label="Capturer et envoyer"
         loading={loading}
         onPress={async () => {
+          const allowed = await ensure('camera');
+          if (!allowed) {
+            return;
+          }
           setLoading(true);
           setError(null);
           try {

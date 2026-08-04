@@ -33,6 +33,29 @@ export function formatCorridorOperation(
   return `${sourceCountryName} vers ${destinationCountryName}`;
 }
 
+/** Corridor compact ex. `SN → CI`. */
+export function formatCorridorCodes(
+  sourceCountryCode: string,
+  destinationCountryCode: string,
+): string {
+  return `${sourceCountryCode} → ${destinationCountryCode}`;
+}
+
+/** Date + heure style historique : `15/07/2026 - 19:23:02`. */
+export function formatHistoryDateTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return iso;
+  }
+  const date = d.toLocaleDateString('fr-FR');
+  const time = d.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  return `${date} - ${time}`;
+}
+
 export function formatStatus(status: string): string {
   const map: Record<string, string> = {
     CREATED: 'Créée',

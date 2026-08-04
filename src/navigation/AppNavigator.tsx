@@ -6,6 +6,7 @@ import {TransferNavigator} from './TransferNavigator';
 import {KycNavigator} from './KycNavigator';
 import {TransactionDetailScreen} from '../features/activity/screens/TransactionDetailScreen';
 import {BeneficiaryFormScreen} from '../features/beneficiaries/screens/BeneficiaryFormScreen';
+import {ContactPickerScreen} from '../features/beneficiaries/screens/ContactPickerScreen';
 import {
   AppearanceScreen,
   SecurityScreen,
@@ -50,6 +51,11 @@ export function AppNavigator() {
         name="BeneficiaryForm"
         component={BeneficiaryFormScreen}
         options={{title: 'Bénéficiaire'}}
+      />
+      <Stack.Screen
+        name="ContactPicker"
+        component={ContactPickerScreen}
+        options={{title: 'Choix du contact'}}
       />
       <Stack.Screen
         name="Appearance"

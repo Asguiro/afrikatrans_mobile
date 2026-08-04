@@ -6,7 +6,6 @@ import {
   formatCorridorOperation,
   formatDateTime,
   formatMoney,
-  formatStatus,
 } from '../../../utils/format';
 
 type PreviewInput = {
@@ -115,21 +114,20 @@ function buildRows(props: Props): Row[] {
   if (props.mode === 'preview') {
     const {quote} = props;
     const rows: Row[] = [
+      {label: 'De', value: props.sourceCountryName},
       {
-        label: 'Numéro de l’expéditeur',
+        label: 'Expéditeur',
         value: props.sourceAccountPhone,
       },
-      {label: 'Opérateur expéditeur', value: props.sourceOperatorName},
+      {label: 'Opérateur', value: props.sourceOperatorName},
+      {label: 'Vers', value: props.destinationCountryName},
       {
-        label: 'Numéro du bénéficiaire',
-        value: props.destinationPhone,
+        label: 'Bénéficiaire',
+        value: props.beneficiaryName
+          ? `${props.beneficiaryName}\n${props.destinationPhone}`
+          : props.destinationPhone,
       },
-      {label: 'Opérateur bénéficiaire', value: props.destinationOperatorName},
-    ];
-    if (props.beneficiaryName) {
-      rows.push({label: 'Bénéficiaire', value: props.beneficiaryName});
-    }
-    rows.push(
+      {label: 'Opérateur', value: props.destinationOperatorName},
       {
         label: 'Montant envoyé',
         value: formatMoney(quote.sendAmount, quote.sourceCurrency),
@@ -148,41 +146,31 @@ function buildRows(props: Props): Row[] {
         value: formatMoney(quote.receiveAmount, quote.destinationCurrency),
         emphasize: true,
       },
-    );
+    ];
     return rows;
   }
 
   const {transaction} = props;
   return [
-    {label: 'Numéro de transaction', value: transaction.reference},
-    {label: 'Statut', value: formatStatus(transaction.status)},
+    {label: 'Id transaction', value: transaction.reference},
     {
       label: 'Date et heure',
       value: formatDateTime(transaction.createdAt),
     },
+    {label: 'De', value: props.sourceCountryName},
     {
-      label: 'Opération de transfert',
-      value: formatCorridorOperation(
-        props.sourceCountryName,
-        props.destinationCountryName,
-      ),
-    },
-    {
-      label: 'Numéro de l’expéditeur',
+      label: 'Expéditeur',
       value: transaction.sourceAccountPhone,
     },
-    {label: 'Opérateur expéditeur', value: transaction.sourceOperatorName},
-    {
-      label: 'Numéro du bénéficiaire',
-      value: transaction.destinationPhone,
-    },
-    {
-      label: 'Opérateur bénéficiaire',
-      value: transaction.destinationOperatorName,
-    },
+    {label: 'Opérateur', value: transaction.sourceOperatorName},
+    {label: 'Vers', value: props.destinationCountryName},
     {
       label: 'Bénéficiaire',
-      value: transaction.beneficiaryName,
+      value: `${transaction.beneficiaryName}\n${transaction.destinationPhone}`,
+    },
+    {
+      label: 'Opérateur',
+      value: transaction.destinationOperatorName,
     },
     {
       label: 'Montant envoyé',

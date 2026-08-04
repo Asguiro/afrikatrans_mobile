@@ -3,6 +3,7 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import type {RootStackParamList, OnboardingStackParamList} from './types';
 import {SplashScreen} from '../features/onboarding/screens/SplashScreen';
 import {OnboardingScreen} from '../features/onboarding/screens/OnboardingScreen';
+import {PermissionsOnboardingScreen} from '../features/onboarding/screens/PermissionsOnboardingScreen';
 import {AuthNavigator} from './AuthNavigator';
 import {AppNavigator} from './AppNavigator';
 import {useSessionStore} from '../stores/sessionStore';
@@ -17,6 +18,10 @@ function OnboardingNavigator() {
   return (
     <OnboardingStack.Navigator screenOptions={{headerShown: false}}>
       <OnboardingStack.Screen name="Onboarding" component={OnboardingScreen} />
+      <OnboardingStack.Screen
+        name="Permissions"
+        component={PermissionsOnboardingScreen}
+      />
     </OnboardingStack.Navigator>
   );
 }

@@ -13,6 +13,7 @@ export type AuthStackParamList = {
 
 export type OnboardingStackParamList = {
   Onboarding: undefined;
+  Permissions: undefined;
 };
 
 export type KycStackParamList = {
@@ -47,6 +48,7 @@ export type AppStackParamList = {
   Kyc: NavigatorScreenParams<KycStackParamList> | undefined;
   TransactionDetail: {transactionId: string};
   BeneficiaryForm: {beneficiaryId?: string} | undefined;
+  ContactPicker: undefined;
   Appearance: undefined;
   Security: undefined;
   EditProfile: undefined;
