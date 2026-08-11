@@ -62,11 +62,7 @@ export function AmountScreen({navigation}: AmountProps) {
   const createQuote = useCreateQuoteMutation();
   const {data: countries} = useCountriesQuery();
   const [error, setError] = useState<string | null>(null);
-  const [sendText, setSendText] = useState(
-    draft.amountMode === 'SEND' && draft.amount
-      ? String(draft.amount)
-      : '25000',
-  );
+  const [sendText, setSendText] = useState('');
   const [receiveText, setReceiveText] = useState('');
   const [activeField, setActiveField] = useState<'SEND' | 'RECEIVE'>('SEND');
   const {fieldProps} = useInputFocusChain(['send', 'receive'] as const);
@@ -74,6 +70,20 @@ export function AmountScreen({navigation}: AmountProps) {
   const currency =
     countries?.find(c => c.code === draft.sourceCountryCode)?.currency ??
     'XOF';
+
+  const resetAmounts = () => {
+    setSendText('');
+    setReceiveText('');
+    setActiveField('SEND');
+    setError(null);
+    setDraft({amount: undefined, amountMode: 'SEND', quoteId: undefined});
+  };
+
+  /** Toujours repartir de 0 à l’entrée sur l’écran montant. */
+  useEffect(() => {
+    resetAmounts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, []);
 
   const syncFromSend = (raw: string) => {
     const digits = raw.replace(/\D/g, '');
@@ -94,11 +104,6 @@ export function AmountScreen({navigation}: AmountProps) {
     setSendText(amount > 0 ? String(est.totalDebitAmount) : '');
     setDraft({amountMode: 'RECEIVE', amount: amount || undefined});
   };
-
-  useEffect(() => {
-    syncFromSend(sendText);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- init once
-  }, []);
 
   const preview = useMemo(() => {
     const amount = Number(
@@ -206,7 +211,6 @@ export function AmountScreen({navigation}: AmountProps) {
         receiveDigits={receiveText}
         currency={currency}
         activeField={activeField}
-        feeAmount={preview.feeAmount}
         sendHelper={
           preview.sendAmount > 0 && activeField === 'SEND'
             ? `Le destinataire reçoit ${formatMoney(preview.receiveAmount, currency)}`
@@ -251,33 +255,40 @@ export function AmountScreen({navigation}: AmountProps) {
 
       <View
         style={[
-          amountStyles.feeRow,
+          amountStyles.summary,
           {
             borderColor: theme.colors.border,
-            backgroundColor: theme.colors.brandPrimarySoft,
-            borderRadius: theme.radius.md,
+            backgroundColor: theme.colors.surface,
+            borderRadius: theme.radius.lg,
           },
         ]}>
-        <Text style={{color: theme.colors.textSecondary, fontWeight: '600'}}>
-          Frais estimés
-        </Text>
-        <Text style={{color: theme.colors.textPrimary, fontWeight: '800'}}>
-          {preview.feeAmount > 0
-            ? formatMoney(preview.feeAmount, currency)
-            : '—'}
-        </Text>
+        <View style={amountStyles.summaryRow}>
+          <Text style={{color: theme.colors.textSecondary, fontWeight: '600'}}>
+            Frais estimés
+          </Text>
+          <Text style={{color: theme.colors.textPrimary, fontWeight: '800'}}>
+            {preview.feeAmount > 0
+              ? formatMoney(preview.feeAmount, currency)
+              : '—'}
+          </Text>
+        </View>
+        <View
+          style={[
+            amountStyles.summaryDivider,
+            {backgroundColor: theme.colors.divider},
+          ]}
+        />
+        <View style={amountStyles.summaryRow}>
+          <Text style={{color: theme.colors.textPrimary, fontWeight: '700'}}>
+            Total à payer
+          </Text>
+          <Text style={{color: theme.colors.brandPrimary, fontWeight: '800'}}>
+            {preview.totalDebitAmount > 0
+              ? formatMoney(preview.totalDebitAmount, currency)
+              : '—'}
+          </Text>
+        </View>
       </View>
-      <Text
-        style={{
-          color: theme.colors.textMuted,
-          fontSize: theme.typography.caption,
-          marginBottom: theme.spacing.lg,
-        }}>
-        Total à payer :{' '}
-        {preview.totalDebitAmount > 0
-          ? formatMoney(preview.totalDebitAmount, currency)
-          : '—'}
-      </Text>
 
       {error ? (
         <Text style={{color: theme.colors.error, marginBottom: 12}}>{error}</Text>
@@ -299,15 +310,22 @@ const amountStyles = StyleSheet.create({
     padding: 12,
     marginBottom: 16,
   },
-  feeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  summary: {
     borderWidth: 1,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  summaryDivider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 8,
   },
 });
 

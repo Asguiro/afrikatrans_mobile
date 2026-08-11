@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import {useTheme} from '../../theme/ThemeProvider';
+import {useKeyboardScroll} from './keyboardScrollContext';
 
 type Props = TextInputProps & {
   label?: string;
@@ -37,6 +38,7 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
     style,
     accessoryActionLabel,
     onSubmitEditing,
+    onFocus,
     returnKeyType,
     submitBehavior,
     keyboardType,
@@ -46,6 +48,7 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
 ) {
   const theme = useTheme();
   const accessoryId = useId();
+  const keyboardScroll = useKeyboardScroll();
   const needsAccessory =
     Platform.OS === 'ios' &&
     isPadKeyboard(keyboardType) &&
@@ -73,6 +76,10 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
         returnKeyType={returnKeyType}
         submitBehavior={submitBehavior}
         onSubmitEditing={onSubmitEditing}
+        onFocus={event => {
+          keyboardScroll?.onInputFocus();
+          onFocus?.(event);
+        }}
         inputAccessoryViewID={needsAccessory ? accessoryId : undefined}
         style={[
           styles.input,

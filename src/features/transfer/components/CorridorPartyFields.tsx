@@ -18,6 +18,7 @@ import {COUNTRY_FLAGS} from '../constants/operatorBrands';
 import type {OperatorBrandCode} from '../constants/operatorBrands';
 import {OperatorBrandDropdown} from './OperatorBrandDropdown';
 import {TextField} from '../../../components/ui/TextField';
+import {useKeyboardScroll} from '../../../components/ui/keyboardScrollContext';
 
 type PhoneFieldBind = {
   ref?: (node: TextInput | null) => void;
@@ -75,6 +76,7 @@ export function CorridorPartyFields({
   nameField,
 }: Props) {
   const theme = useTheme();
+  const keyboardScroll = useKeyboardScroll();
   const [pickerOpen, setPickerOpen] = useState(false);
   const accessoryId = useId();
   const needsAccessory =
@@ -175,6 +177,7 @@ export function CorridorPartyFields({
           returnKeyType={phoneField?.returnKeyType}
           submitBehavior={phoneField?.submitBehavior}
           onSubmitEditing={phoneField?.onSubmitEditing}
+          onFocus={() => keyboardScroll?.onInputFocus()}
           inputAccessoryViewID={needsAccessory ? accessoryId : undefined}
           style={{
             flex: 1,

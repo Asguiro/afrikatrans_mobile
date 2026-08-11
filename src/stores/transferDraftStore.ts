@@ -23,6 +23,8 @@ export type TransferDraft = {
 };
 
 type TransferDraftState = TransferDraft & {
+  /** Incrémenté à chaque reset — permet aux écrans montés (tabs) de resynchroniser le formulaire. */
+  resetEpoch: number;
   setDraft: (patch: Partial<TransferDraft>) => void;
   reset: () => void;
 };
@@ -33,6 +35,11 @@ const initial: TransferDraft = {
 
 export const useTransferDraftStore = create<TransferDraftState>(set => ({
   ...initial,
+  resetEpoch: 0,
   setDraft: patch => set(state => ({...state, ...patch})),
-  reset: () => set({...initial}),
+  reset: () =>
+    set(state => ({
+      ...initial,
+      resetEpoch: state.resetEpoch + 1,
+    })),
 }));

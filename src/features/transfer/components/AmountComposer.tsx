@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import {ArrowDown} from 'lucide-react-native';
 import {useTheme} from '../../../theme/ThemeProvider';
-import {formatMoney} from '../../../utils/format';
+import {useKeyboardScroll} from '../../../components/ui/keyboardScrollContext';
 
 type FieldKey = 'SEND' | 'RECEIVE';
 
@@ -61,6 +61,7 @@ function AmountRow({
   accessibilityLabel,
 }: AmountRowProps) {
   const theme = useTheme();
+  const keyboardScroll = useKeyboardScroll();
   const accessoryId = React.useId();
   const localRef = React.useRef<TextInput | null>(null);
   const needsAccessory = Platform.OS === 'ios';
@@ -111,7 +112,10 @@ function AmountRow({
           value={display}
           placeholder="0"
           placeholderTextColor={theme.colors.textMuted}
-          onFocus={onFocus}
+          onFocus={() => {
+            keyboardScroll?.onInputFocus();
+            onFocus();
+          }}
           onChangeText={text => onChangeDigits(digitsOnly(text))}
           returnKeyType={returnKeyType}
           submitBehavior={returnKeyType === 'next' ? 'submit' : 'blurAndSubmit'}
@@ -199,7 +203,6 @@ type Props = {
   receiveDigits: string;
   currency: string;
   activeField: FieldKey;
-  feeAmount: number;
   sendHelper: string;
   receiveHelper: string;
   onChangeSend: (digits: string) => void;
@@ -221,14 +224,13 @@ type Props = {
 
 /**
  * Composeur montant type transfert : deux puits de saisie
- * clairement éditables, reliés par les frais.
+ * clairement éditables (frais affichés une seule fois sous le composer).
  */
 export function AmountComposer({
   sendDigits,
   receiveDigits,
   currency,
   activeField,
-  feeAmount,
   sendHelper,
   receiveHelper,
   onChangeSend,
@@ -281,17 +283,6 @@ export function AmountComposer({
             size={16}
             strokeWidth={2.5}
           />
-          <Text
-            style={{
-              color: theme.colors.textPrimary,
-              fontWeight: '700',
-              fontSize: theme.typography.caption,
-              marginLeft: 6,
-            }}>
-            {feeAmount > 0
-              ? `Frais ${formatMoney(feeAmount, currency)}`
-              : 'Saisir un montant'}
-          </Text>
         </View>
         <View
           style={[styles.bridgeLine, {backgroundColor: theme.colors.divider}]}
@@ -351,9 +342,10 @@ const styles = StyleSheet.create({
   bridgePill: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 1,
     borderRadius: 999,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 8,
     marginHorizontal: 10,
   },

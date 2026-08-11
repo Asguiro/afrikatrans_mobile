@@ -84,6 +84,7 @@ export function HomeScreen({navigation}: Props) {
   const user = useSessionStore(s => s.user);
   const draft = useTransferDraftStore();
   const setDraft = useTransferDraftStore(s => s.setDraft);
+  const resetEpoch = useTransferDraftStore(s => s.resetEpoch);
   const {data: countries, isLoading, isError, refetch} = useCountriesQuery();
   const {ensure} = useAppPermissions();
 
@@ -151,6 +152,25 @@ export function HomeScreen({navigation}: Props) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  /** Après « Fermer » sur le reçu : le draft Zustand est vidé, mais Home (tab) reste monté. */
+  useEffect(() => {
+    if (resetEpoch === 0) {
+      return;
+    }
+    const srcCountry = defaultSourceCountry;
+    const dstCountry = 'CI';
+    const srcDialCode =
+      countries?.find(c => c.code === srcCountry)?.dialCode ?? '+221';
+    setSourceCountry(srcCountry);
+    setDestCountry(dstCountry);
+    setSourceOperatorCode('WAVE');
+    setDestOperatorCode('ORANGE');
+    setSourceNumber(stripDialCode(user?.phone ?? '', srcDialCode));
+    setDestNumber('');
+    setBeneficiaryName('');
+    setError(null);
+  }, [resetEpoch, countries, defaultSourceCountry, user?.phone]);
+
   const {fieldProps} = useInputFocusChain([
     'sourcePhone',
     'destPhone',
@@ -196,6 +216,39 @@ export function HomeScreen({navigation}: Props) {
       }
       setDraft({pendingContactApply: false});
     }, [countries, destDial, setDraft]),
+  );
+
+  const clearBeneficiaryIdentity = useCallback(() => {
+    setBeneficiaryName('');
+    setDraft({
+      destinationFirstName: undefined,
+      destinationLastName: undefined,
+      destinationPhone: undefined,
+      beneficiaryId: undefined,
+    });
+  }, [setDraft]);
+
+  const onDestNumberChange = useCallback(
+    (digits: string) => {
+      setDestNumber(digits);
+      if (!digits.trim()) {
+        clearBeneficiaryIdentity();
+      }
+    },
+    [clearBeneficiaryIdentity],
+  );
+
+  const onBeneficiaryNameChange = useCallback(
+    (value: string) => {
+      setBeneficiaryName(value);
+      if (!value.trim()) {
+        setDraft({
+          destinationFirstName: undefined,
+          destinationLastName: undefined,
+        });
+      }
+    },
+    [setDraft],
   );
 
   const openContactPicker = async () => {
@@ -266,6 +319,8 @@ export function HomeScreen({navigation}: Props) {
         destinationPhone: composePhone(destDial, destNumber),
         destinationFirstName: firstName,
         destinationLastName: lastName,
+        amount: undefined,
+        amountMode: 'SEND',
         quoteId: undefined,
       });
 
@@ -342,7 +397,7 @@ export function HomeScreen({navigation}: Props) {
         operatorCode={destOperatorCode}
         phoneLabel="Numéro du bénéficiaire"
         onCountryChange={setDestCountry}
-        onNumberChange={setDestNumber}
+        onNumberChange={onDestNumberChange}
         onOperatorChange={(code: OperatorBrandCode) =>
           setDestOperatorCode(code)
         }
@@ -351,7 +406,7 @@ export function HomeScreen({navigation}: Props) {
           void openContactPicker();
         }}
         beneficiaryName={beneficiaryName}
-        onBeneficiaryNameChange={setBeneficiaryName}
+        onBeneficiaryNameChange={onBeneficiaryNameChange}
         phoneField={{
           ref: destPhoneField.ref,
           returnKeyType:
