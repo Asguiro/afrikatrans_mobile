@@ -41,12 +41,23 @@ export function OperatorLogoMark({brand, size = 56}: MarkProps) {
           borderColor: theme.colors.border,
         },
       ]}>
-      <Image
-        source={brand.logo}
-        style={{width: size * 0.86, height: size * 0.86}}
-        resizeMode="contain"
-        accessibilityIgnoresInvertColors
-      />
+      {brand.logo ? (
+        <Image
+          source={brand.logo}
+          style={{width: size * 0.86, height: size * 0.86}}
+          resizeMode="contain"
+          accessibilityIgnoresInvertColors
+        />
+      ) : (
+        <Text
+          style={{
+            color: '#FFFFFF',
+            fontWeight: '800',
+            fontSize: Math.max(10, size * 0.28),
+          }}>
+          {brand.initials}
+        </Text>
+      )}
     </View>
   );
 }

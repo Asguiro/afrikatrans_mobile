@@ -133,9 +133,11 @@ export function BeneficiaryFormScreen({navigation, route}: Props) {
       </Text>
       <SelectList
         options={[
-          {id: 'CI', title: "Côte d'Ivoire"},
-          {id: 'SN', title: 'Sénégal'},
           {id: 'ML', title: 'Mali'},
+          {id: 'SN', title: 'Sénégal'},
+          {id: 'CI', title: "Côte d'Ivoire"},
+          {id: 'GA', title: 'Gabon'},
+          {id: 'CF', title: 'Centrafrique'},
         ]}
         onSelect={id => {
           setValue('countryCode', id);

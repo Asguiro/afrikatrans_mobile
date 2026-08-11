@@ -8,14 +8,24 @@ import type {
   UserProfile,
 } from '../../types/api';
 
+/**
+ * Pays MVP : Mali, Sénégal, Côte d’Ivoire, Gabon, Centrafrique.
+ * Devises / indicatifs alignés usage Mobile Money (XOF / XAF).
+ */
 export const mockCountries: Country[] = [
-  {code: 'SN', name: 'Sénégal', dialCode: '+221', currency: 'XOF'},
-  {code: 'CI', name: "Côte d'Ivoire", dialCode: '+225', currency: 'XOF'},
   {code: 'ML', name: 'Mali', dialCode: '+223', currency: 'XOF'},
-  {code: 'BF', name: 'Burkina Faso', dialCode: '+226', currency: 'XOF'},
+  {code: 'SN', name: 'Sénégal', dialCode: '+221', currency: 'XOF'},
+  {code: "CI", name: "Côte d'Ivoire", dialCode: '+225', currency: 'XOF'},
+  {code: 'GA', name: 'Gabon', dialCode: '+241', currency: 'XAF'},
+  {code: 'CF', name: 'Centrafrique', dialCode: '+236', currency: 'XAF'},
 ];
 
+/**
+ * Opérateurs mock par pays (codes marque → mapping AfribaPay plus tard :
+ * orange, wave, mtn, moov, free, airtel ; sama à confirmer).
+ */
 export const mockOperators: Operator[] = [
+  // Sénégal
   {
     id: 'op-wave-sn',
     code: 'WAVE',
@@ -31,6 +41,14 @@ export const mockOperators: Operator[] = [
     status: 'AVAILABLE',
   },
   {
+    id: 'op-free-sn',
+    code: 'FREE',
+    name: 'Free Money',
+    countryCode: 'SN',
+    status: 'AVAILABLE',
+  },
+  // Côte d'Ivoire
+  {
     id: 'op-orange-ci',
     code: 'ORANGE',
     name: 'Orange Money',
@@ -42,7 +60,7 @@ export const mockOperators: Operator[] = [
     code: 'MTN',
     name: 'MTN MoMo',
     countryCode: 'CI',
-    status: 'MAINTENANCE',
+    status: 'AVAILABLE',
   },
   {
     id: 'op-moov-ci',
@@ -51,6 +69,14 @@ export const mockOperators: Operator[] = [
     countryCode: 'CI',
     status: 'AVAILABLE',
   },
+  {
+    id: 'op-wave-ci',
+    code: 'WAVE',
+    name: 'Wave',
+    countryCode: 'CI',
+    status: 'AVAILABLE',
+  },
+  // Mali
   {
     id: 'op-orange-ml',
     code: 'ORANGE',
@@ -66,17 +92,40 @@ export const mockOperators: Operator[] = [
     status: 'AVAILABLE',
   },
   {
-    id: 'op-orange-bf',
-    code: 'ORANGE',
-    name: 'Orange Money',
-    countryCode: 'BF',
+    id: 'op-sama-ml',
+    code: 'SAMA',
+    name: 'Sama Money',
+    countryCode: 'ML',
+    status: 'AVAILABLE',
+  },
+  // Gabon
+  {
+    id: 'op-airtel-ga',
+    code: 'AIRTEL',
+    name: 'Airtel Money',
+    countryCode: 'GA',
     status: 'AVAILABLE',
   },
   {
-    id: 'op-moov-bf',
+    id: 'op-moov-ga',
     code: 'MOOV',
     name: 'Moov Money',
-    countryCode: 'BF',
+    countryCode: 'GA',
+    status: 'AVAILABLE',
+  },
+  // Centrafrique
+  {
+    id: 'op-orange-cf',
+    code: 'ORANGE',
+    name: 'Orange Money',
+    countryCode: 'CF',
+    status: 'AVAILABLE',
+  },
+  {
+    id: 'op-moov-cf',
+    code: 'MOOV',
+    name: 'Moov Money',
+    countryCode: 'CF',
     status: 'AVAILABLE',
   },
 ];
@@ -134,10 +183,10 @@ export let mockBeneficiaries: Beneficiary[] = [
     id: 'ben_2',
     firstName: 'Ibrahim',
     lastName: 'Traoré',
-    phone: '+2250500987654',
-    countryCode: 'CI',
-    operatorId: 'op-moov-ci',
-    operatorName: 'Moov Money',
+    phone: '+22376001234',
+    countryCode: 'ML',
+    operatorId: 'op-orange-ml',
+    operatorName: 'Orange Money',
     favorite: false,
   },
 ];
