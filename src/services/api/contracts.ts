@@ -1,9 +1,11 @@
 import type {
   ApiResponse,
+  AppNotification,
   AuthTokens,
   Beneficiary,
   Country,
   KycProfile,
+  NotificationPreferences,
   Operator,
   Quote,
   Transaction,
@@ -55,7 +57,6 @@ export type UpdateMeInput = {
   firstName: string;
   lastName: string;
   email?: string | null;
-  avatarUrl?: string | null;
 };
 
 export type ChangePasswordInput = {
@@ -125,4 +126,16 @@ export type KycApi = {
     documentType: 'PASSPORT' | 'NATIONAL_ID' | 'RESIDENCE_PERMIT';
   }) => Promise<ApiResponse<KycProfile>>;
   submitSelfie: () => Promise<ApiResponse<KycProfile>>;
+};
+
+export type NotificationsApi = {
+  list: (opts?: {
+    unreadOnly?: boolean;
+  }) => Promise<ApiResponse<AppNotification[]>>;
+  getPreferences: () => Promise<ApiResponse<NotificationPreferences>>;
+  updatePreferences: (input: {
+    emailEnabled?: boolean;
+  }) => Promise<ApiResponse<NotificationPreferences>>;
+  markRead: (id: string) => Promise<ApiResponse<{read: boolean}>>;
+  markAllRead: () => Promise<ApiResponse<{updated: number}>>;
 };

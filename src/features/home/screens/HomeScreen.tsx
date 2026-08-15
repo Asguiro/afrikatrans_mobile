@@ -26,7 +26,7 @@ import {
 } from '../../../components/feedback/StateViews';
 import {useInputFocusChain} from '../../../hooks/useInputFocusChain';
 import {useAppPermissions} from '../../../hooks/useAppPermissions';
-import {catalogApi} from '../../../services/api';
+import {catalogApi, notificationsApi} from '../../../services/api';
 import {unwrap} from '../../../services/api/helpers';
 import {loadDeviceContacts} from '../../../services/deviceContacts';
 import {
@@ -34,7 +34,10 @@ import {
   parsePhoneAgainstCatalog,
   stripDialCode,
 } from '../../../utils/phone';
-import {MessageCard} from '../components/MessageCard';
+import {
+  MessageCard,
+  type AppMessage,
+} from '../components/MessageCard';
 import {CorridorPartyFields} from '../../transfer/components/CorridorPartyFields';
 import {resolveOperator} from '../../transfer/utils/transferMath';
 import {
@@ -151,6 +154,34 @@ export function HomeScreen({navigation}: Props) {
   );
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [inboxMessages, setInboxMessages] = useState<AppMessage[] | undefined>();
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      (async () => {
+        try {
+          const rows = unwrap(await notificationsApi.list());
+          if (cancelled || rows.length === 0) {
+            return;
+          }
+          setInboxMessages(
+            rows.slice(0, 8).map(n => ({
+              id: n.id,
+              kind: 'update' as const,
+              title: n.title,
+              body: n.body,
+            })),
+          );
+        } catch {
+          // Garde les messages mock / précédents si l’API est down.
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
 
   /** Après « Fermer » sur le reçu : le draft Zustand est vidé, mais Home (tab) reste monté. */
   useEffect(() => {
@@ -364,7 +395,7 @@ export function HomeScreen({navigation}: Props) {
         <BrandLogo variant="icon" size={40} plate="plain" />
       </View>
 
-      <MessageCard rotateMs={10000} />
+      <MessageCard messages={inboxMessages} rotateMs={10000} />
 
       <CorridorPartyFields
         title="De"

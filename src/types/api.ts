@@ -72,6 +72,24 @@ export type Operator = {
   status: 'AVAILABLE' | 'MAINTENANCE' | 'UNAVAILABLE';
 };
 
+export type AppNotification = {
+  id: string;
+  title: string;
+  body: string;
+  payload?: unknown;
+  readAt: string | null;
+  createdAt: string;
+};
+
+export type NotificationPreferences = {
+  inApp: boolean;
+  push: boolean;
+  email: boolean;
+  sms: boolean;
+  smsUserControllable: boolean;
+  emailAddress?: string | null;
+};
+
 export type Beneficiary = {
   id: string;
   firstName: string;

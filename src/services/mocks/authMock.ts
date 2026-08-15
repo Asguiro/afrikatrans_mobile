@@ -111,8 +111,7 @@ export const mockAuthApi: AuthApi = {
       firstName: input.firstName.trim(),
       lastName: input.lastName.trim(),
       email,
-      avatarUrl:
-        input.avatarUrl === undefined ? mockUser.avatarUrl : input.avatarUrl,
+      avatarUrl: mockUser.avatarUrl,
     });
     return ok({...mockUser});
   },

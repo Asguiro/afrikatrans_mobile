@@ -1,10 +1,8 @@
 import React, {useMemo, useState} from 'react';
-import {Alert, Pressable, Text, View} from 'react-native';
+import {Alert, Text, View} from 'react-native';
 import {useForm, Controller} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import type {NativeStackScreenProps} from '@react-navigation/native-stack';
-import {Camera} from 'lucide-react-native';
-import {launchImageLibrary} from 'react-native-image-picker';
 import {z} from 'zod';
 import type {AppStackParamList} from '../../../navigation/types';
 import {Screen} from '../../../components/ui/Screen';
@@ -14,9 +12,6 @@ import {Avatar} from '../../../components/ui/ListRow';
 import {updateProfileSchema} from '../../../schemas/forms';
 import {useUpdateMeMutation, useCountriesQuery} from '../../../hooks/queries';
 import {useSessionStore} from '../../../stores/sessionStore';
-import {useAppPermissions} from '../../../hooks/useAppPermissions';
-import {withAppLockSuppressed} from '../../../stores/appLockGateStore';
-import {useProfileDraftStore} from '../../../stores/profileDraftStore';
 import {useTheme} from '../../../theme/ThemeProvider';
 import {useInputFocusChain} from '../../../hooks/useInputFocusChain';
 import {ApiError} from '../../../types/api';
@@ -24,17 +19,16 @@ import {ApiError} from '../../../types/api';
 type Props = NativeStackScreenProps<AppStackParamList, 'EditProfile'>;
 type FormValues = z.infer<typeof updateProfileSchema>;
 
+/**
+ * Édition profil alignée sur PATCH /me API (firstName, lastName, email).
+ * Avatar / photo : suspendu — l’API n’expose pas encore avatarUrl.
+ */
 export function EditProfileScreen({navigation}: Props) {
   const theme = useTheme();
   const user = useSessionStore(s => s.user);
   const mutation = useUpdateMeMutation();
   const {data: countries} = useCountriesQuery();
-  const pendingAvatarUri = useProfileDraftStore(s => s.pendingAvatarUri);
-  const setPendingAvatarUri = useProfileDraftStore(s => s.setPendingAvatarUri);
-  const clearPendingAvatar = useProfileDraftStore(s => s.clearPendingAvatar);
-  const avatarUri = pendingAvatarUri ?? user?.avatarUrl ?? null;
   const [formError, setFormError] = useState<string | null>(null);
-  const {ensure} = useAppPermissions();
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(' ');
   const countryName =
@@ -63,44 +57,6 @@ export function EditProfileScreen({navigation}: Props) {
     'email',
   ] as const);
 
-  const pickPhoto = async () => {
-    const allowed = await ensure('photoLibrary');
-    if (!allowed) {
-      return;
-    }
-    try {
-      await withAppLockSuppressed(async () => {
-        const response = await launchImageLibrary({
-          mediaType: 'photo',
-          quality: 0.8,
-          maxWidth: 1024,
-          maxHeight: 1024,
-          selectionLimit: 1,
-        });
-
-        if (response.didCancel) {
-          return;
-        }
-        if (response.errorCode) {
-          Alert.alert(
-            'Photo',
-            response.errorMessage ?? 'Impossible de choisir une photo',
-          );
-          return;
-        }
-        const uri = response.assets?.[0]?.uri;
-        if (uri) {
-          setPendingAvatarUri(uri);
-        }
-      });
-    } catch {
-      Alert.alert(
-        'Photo indisponible',
-        'Impossible d’ouvrir la galerie pour le moment.',
-      );
-    }
-  };
-
   const onSubmit = handleSubmit(async values => {
     setFormError(null);
     try {
@@ -108,9 +64,7 @@ export function EditProfileScreen({navigation}: Props) {
         firstName: values.firstName.trim(),
         lastName: values.lastName.trim(),
         email: values.email?.trim() ? values.email.trim() : null,
-        avatarUrl: avatarUri,
       });
-      clearPendingAvatar();
       Alert.alert('Profil mis à jour', 'Vos informations ont été enregistrées.');
       navigation.goBack();
     } catch (e) {
@@ -135,49 +89,18 @@ export function EditProfileScreen({navigation}: Props) {
   return (
     <Screen
       title="Informations"
-      subtitle="Mettez à jour votre identité et votre photo.">
+      subtitle="Mettez à jour votre identité (prénom, nom, e-mail).">
       <View style={{alignItems: 'center', marginBottom: theme.spacing['2xl']}}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Modifier la photo de profil"
-          hitSlop={12}
-          onPress={() => {
-            void pickPhoto();
-          }}
-          style={{alignItems: 'center', minHeight: 44, minWidth: 44}}>
-          <View>
-            <Avatar name={fullName || 'AT'} size={96} imageUri={avatarUri} />
-            <View
-              style={{
-                position: 'absolute',
-                right: 0,
-                bottom: 0,
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: theme.colors.brandPrimary,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderWidth: 2,
-                borderColor: theme.colors.background,
-              }}>
-              <Camera
-                color={theme.colors.onBrandPrimary}
-                size={16}
-                strokeWidth={2.5}
-              />
-            </View>
-          </View>
-          <Text
-            style={{
-              color: theme.colors.brandPrimary,
-              fontWeight: '600',
-              marginTop: theme.spacing.md,
-              fontSize: theme.typography.bodySmall,
-            }}>
-            Changer la photo
-          </Text>
-        </Pressable>
+        <Avatar name={fullName || 'AT'} size={96} />
+        <Text
+          style={{
+            color: theme.colors.textMuted,
+            marginTop: theme.spacing.md,
+            fontSize: theme.typography.caption,
+            textAlign: 'center',
+          }}>
+          Photo de profil bientôt disponible
+        </Text>
       </View>
 
       <Controller
